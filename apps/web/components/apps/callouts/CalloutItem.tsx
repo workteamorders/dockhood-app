@@ -4,6 +4,7 @@ import { shortAddress } from '@hood/shared';
 import { HoodLogo } from '@/components/xp/Icons';
 import { TxLink } from '@/components/xp/TxLink';
 import { REACTION_KINDS, type Callout, type ReactionKind } from '@/lib/api';
+import { displayTicker } from '@/lib/hoodToken';
 import { openToken } from '@/lib/openApp';
 import { timeAgo } from '../explore/format';
 import styles from './Callouts.module.css';
@@ -30,7 +31,8 @@ type Props = {
 
 /** One callout (docs/BRIEF.md §5.5). All user text renders as text, never HTML (§4.5). */
 export function CalloutItem({ callout: c, flash, onReact }: Props) {
-  const who = c.kind === 'system' ? 'hood.exe' : (c.nickname ?? shortAddress(c.wallet));
+  const who = c.kind === 'system' ? 'Dockhood' : (c.nickname ?? shortAddress(c.wallet));
+  const ticker = displayTicker(c.tokenAddress, c.ticker);
   return (
     <li className={`${styles.item} ${c.official ? styles.official : ''} ${flash ? styles.flash : ''}`}>
       <Avatar c={c} />
@@ -40,17 +42,17 @@ export function CalloutItem({ callout: c, flash, onReact }: Props) {
             {who}
           </b>
           {c.verified && (
-            <span className={styles.verified} title="Verified: launched a hood.exe coin that graduated">
+            <span className={styles.verified} title="Verified: launched a Dockhood coin that graduated">
               ✔
             </span>
           )}
-          {c.ticker &&
+          {ticker &&
             (c.tokenAddress ? (
-              <button type="button" className={styles.ticker} onClick={() => openToken(c.tokenAddress!, c.ticker!)}>
-                ${c.ticker}
+              <button type="button" className={styles.ticker} onClick={() => openToken(c.tokenAddress!, ticker)}>
+                ${ticker}
               </button>
             ) : (
-              <span className={styles.ticker}>${c.ticker}</span>
+              <span className={styles.ticker}>${ticker}</span>
             ))}
           <time className={styles.time} dateTime={c.createdAt} title={new Date(c.createdAt).toLocaleString()}>
             {timeAgo(c.createdAt)}

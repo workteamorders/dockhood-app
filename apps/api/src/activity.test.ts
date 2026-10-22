@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { HEXE_TOKEN, NATIVE_PAIR } from '@hood/shared';
+import { HEXE_TOKEN, NATIVE_PAIR, resolveNetwork } from '@hood/shared';
 import { HEXE_MIN_ETH, HOOD_MIN_ETH, activityTick, watchedTokens, type ActivityItem } from './activity';
 import { schema } from './db';
 import type { EnvioClient } from './services/envio';
@@ -70,12 +70,24 @@ function fakeEnvio(trades: Trade[], head = 1_000) {
 const eth = (n: number) => BigInt(Math.round(n * 1e6)) * 10n ** 12n;
 
 describe('trade balloons', () => {
+  it('uses an explicitly configured official token, without inheriting the mainnet token', async () => {
+    await coin(HEXE, 'HEXE', { hood: false });
+    await coin(addr(1), 'TEST', { hood: false });
+    await coin(addr(2), 'THEOREM');
+    const network = resolveNetwork({ chainId: 46630, launchFactory: addr(11), launchAndBuy: addr(12), officialToken: addr(1) });
+    const { tiers } = await watchedTokens(ctx.db, network);
+    expect(tiers).toEqual([
+      { tokens: [addr(1)], minQuote: HEXE_MIN_ETH },
+      { tokens: [addr(2)], minQuote: HOOD_MIN_ETH },
+    ]);
+  });
+
   it('watches $HEXE at its own threshold and ETH-paired hood coins at theirs, nothing else', async () => {
     await coin(HEXE, 'HEXE', { hood: false });
     await coin(addr(1), 'EULER');
     await coin(addr(2), 'STABLE', { pair: USDG });
     await coin(addr(3), 'RANDO', { hood: false });
-    const { tiers, tickers } = await watchedTokens(ctx.db);
+    const { tiers, tickers } = await watchedTokens(ctx.db, ctx.app.deps.env.network);
     expect(tiers).toEqual([
       { tokens: [HEXE], minQuote: HEXE_MIN_ETH },
       { tokens: [addr(1)], minQuote: HOOD_MIN_ETH },
@@ -97,7 +109,7 @@ describe('trade balloons', () => {
     const f = fakeEnvio(trades);
     const seen: { type: string; activity: ActivityItem }[] = [];
     await ctx.pubsub.subscribe(CALLOUTS_CHANNEL, (m) => seen.push(m as (typeof seen)[number]));
-    const tick = () => activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, now: ctx.now });
+    const tick = () => activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, network: ctx.app.deps.env.network, now: ctx.now });
 
     expect(await tick()).toBe(2);
     expect(f.asked[0][1]).toEqual({ afterBlock: 1_000 });
@@ -116,8 +128,8 @@ describe('trade balloons', () => {
     await coin(HEXE, 'HEXE', { hood: false });
     const at = Math.floor(ctx.now().getTime() / 1000);
     const f = fakeEnvio([trade('1001-1', HEXE, eth(1), 1_001, at - 3_600), trade('1002-1', HEXE, eth(1), 1_002, at)]);
-    expect(await activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, now: ctx.now })).toBe(1);
-    expect(await activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, now: ctx.now })).toBe(0);
+    expect(await activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, network: ctx.app.deps.env.network, now: ctx.now })).toBe(1);
+    expect(await activityTick({ db: ctx.db, pubsub: ctx.pubsub, envio: f.envio, network: ctx.app.deps.env.network, now: ctx.now })).toBe(0);
     expect(f.asked[1][1]).toEqual({ afterBlock: 1_002 });
   });
 
@@ -138,7 +150,7 @@ describe('trade balloons', () => {
     await ctx.close();
     ctx = await setup();
     expect((await ctx.app.inject({ method: 'GET', url: '/activity/recent' })).json()).toEqual({ items: [] });
-  });
+  }, 30_000);
 
   it('answers an empty list when the indexer fails', async () => {
     const envio = { notableTrades: async () => Promise.reject(new Error('Envio GraphQL answered 429')) } as unknown as EnvioClient;

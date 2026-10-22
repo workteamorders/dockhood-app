@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Startup } from '@/components/Startup';
 
 export const metadata: Metadata = {
-  title: 'Verification Admin | hood.exe',
+  title: 'Verification Admin | Dockhood',
   robots: { index: false, follow: false },
 };
 

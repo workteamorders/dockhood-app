@@ -40,7 +40,7 @@ export function CurvePreview({ phantomQuote, supply, graduationThreshold, symbol
       const x = (progress: number) => PAD.l + progress * w;
       const y = (price: number) => PAD.t + h - (price / maxPrice) * h;
 
-      ctx.strokeStyle = '#e4e2d6';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.lineWidth = 1;
       for (let i = 0; i <= 4; i++) {
         const gy = Math.round(PAD.t + (h * i) / 4) + 0.5;
@@ -60,7 +60,7 @@ export function CurvePreview({ phantomQuote, supply, graduationThreshold, symbol
 
       ctx.beginPath();
       pts.forEach((p, i) => (i ? ctx.lineTo(x(p.progress), y(p.price)) : ctx.moveTo(x(p.progress), y(p.price))));
-      ctx.strokeStyle = '#0a62e0';
+      ctx.strokeStyle = '#0a84ff';
       ctx.lineWidth = 2;
       ctx.stroke();
 
@@ -88,8 +88,8 @@ export function CurvePreview({ phantomQuote, supply, graduationThreshold, symbol
         ctx.stroke();
       }
 
-      ctx.fillStyle = '#4b4b4b';
-      ctx.font = '10px Tahoma, "Trebuchet MS", "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#6a6a70';
+      ctx.font = '12px Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'left';
       ctx.fillText('0', PAD.l, HEIGHT - 3);

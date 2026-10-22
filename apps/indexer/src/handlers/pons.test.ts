@@ -15,7 +15,7 @@ const ETH = '0x0000000000000000000000000000000000000000';
 
 // A coin launched before the start block, known only from the seed file (seeds/pre-start-launches.csv.gz).
 const OLD_TOKEN = '0x00000000000000000000000000000000000000B1';
-const OLD_CURVE = '0x00000000000000000000000000000000000000C2';
+const OLD_CURVE = '0x00000000000000000000000000000000000000c2';
 const seedFile = join(mkdtempSync(join(tmpdir(), 'hood-seed-')), 'seed.csv.gz');
 writeFileSync(
   seedFile,
@@ -101,7 +101,7 @@ describe('Pons V2 handlers', () => {
 
   it('keeps average-cost positions: router buys count for the recipient, a full sell removes it', async (t) => {
     const ROUTER = '0x00000000000000000000000000000000000000F1';
-    const routerBuy = { ...buy(1, T0 + 5, E18, 1_000n * E18, 0n, 0n), params: { buyer: ROUTER, recipient: TRADER, quoteIn: E18, tokensOut: 1_000n * E18, fee: 0n, tax: 0n } };
+    const routerBuy = { ...buy(1, T0 + 5, E18, 1_000n * E18, 0n, 0n), params: { buyer: ROUTER, recipient: TRADER, quoteIn: E18, tokensOut: 1_000n * E18, fee: 0n, tax: 0n } } as const;
     const indexer = createTestIndexer();
     await indexer.process({
       chains: {
@@ -125,7 +125,7 @@ describe('Pons V2 handlers', () => {
 
   it('records trades on coins launched before the start block from the seed file', async (t) => {
     const indexer = createTestIndexer();
-    const oldBuy = { ...buy(1, T0 + 5, E18, 1_000n * E18, 0n, 0n), srcAddress: OLD_CURVE };
+    const oldBuy = { ...buy(1, T0 + 5, E18, 1_000n * E18, 0n, 0n), srcAddress: OLD_CURVE } as const;
     await indexer.process({ chains: { [CHAIN]: { simulate: [oldBuy] } } });
     t.expect(await indexer.Curve.getOrThrow(OLD_CURVE)).toMatchObject({ token: OLD_TOKEN });
     t.expect(await indexer.Token.getOrThrow(OLD_TOKEN)).toMatchObject({ curve: OLD_CURVE, deployer: DEPLOYER, launchBlock: 30_000_000, trades: 1, buys: 1 });
@@ -189,10 +189,9 @@ describe('Pons V2 handlers', () => {
 
   it('ignores curve events from contracts it never registered', async (t) => {
     const indexer = createTestIndexer();
-    // The test indexer refuses simulated events no handler accepted, which is exactly the routing we want.
-    await t
-      .expect(indexer.process({ chains: { [CHAIN]: { simulate: [{ ...buy(1, T0, E18, E18, 0n, 0n), srcAddress: '0x00000000000000000000000000000000000000ff' }] } } }))
-      .rejects.toThrow(/never reached a handler/);
+    // Wildcard events reach the handler, but unknown curves must not create entities.
+    await indexer.process({ chains: { [CHAIN]: { simulate: [{ ...buy(1, T0, E18, E18, 0n, 0n), srcAddress: '0x00000000000000000000000000000000000000ff' }] } } });
     t.expect(await indexer.Trade.getAll()).toEqual([]);
+    t.expect(await indexer.Token.getAll()).toEqual([]);
   });
 });

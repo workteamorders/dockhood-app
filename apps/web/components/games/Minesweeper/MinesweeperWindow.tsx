@@ -245,7 +245,7 @@ export default function MinesweeperWindow({ win }: { win: WindowState }) {
             <MinesweeperIcon size={40} />
             <div>
               <p>
-                <b>Minesweeper</b> for hood.exe
+                <b>Minesweeper</b> for Dockhood
               </p>
               <p>Beginner, Intermediate, Expert and Custom. Your best times stay in this browser.</p>
               <p className={styles.note}>An original recreation; not affiliated with Microsoft.</p>

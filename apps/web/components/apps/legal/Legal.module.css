@@ -1,17 +1,13 @@
-.doc h1 { margin: 0; font-size: 15px; color: #0a246a; }
-.doc h2 { margin: 12px 0 2px; font-size: 12px; color: #0a246a; }
-.doc p { margin: 0 0 6px; }
-
-.updated { color: #6a6a6a; font-size: 10px; }
-.draft { padding: 3px 6px; border: 1px solid #c9b77b; background: #ffffe1; }
-.contact { margin-top: 14px !important; color: #6a6a6a; font-size: 10px; }
-
-.callout { display: flex; gap: 8px; align-items: center; margin: 8px 0; padding: 6px 8px; border: 1px solid #e0b25c; background: #fff6e0; }
+.doc h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -.5px; color: var(--text-primary); }
+.doc h2 { margin: 24px 0 8px; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.doc p { margin: 0 0 12px; }
+.updated { color: var(--text-secondary); font-size: 12px; }
+.draft { padding: 10px 12px; border: 1px solid rgba(255, 159, 10, .25); border-radius: 8px; background: rgba(255, 159, 10, .08); font-size: 12px; }
+.contact { margin-top: 24px !important; padding-top: 16px; border-top: 1px solid var(--line); color: var(--text-secondary); font-size: 12px; }
+.callout { display: flex; gap: 12px; align-items: center; margin: 16px 0; padding: 14px; border: 1px solid rgba(255, 159, 10, .25); border-radius: 10px; background: rgba(255, 159, 10, .08); }
 .callout > svg { flex: 0 0 auto; }
-.callout p { margin: 0; font-weight: 700; }
-
-.points { margin: 4px 0 8px; padding-left: 18px; }
-.points li { margin-bottom: 5px; }
-
-.link { font: inherit; color: #0b4fd1; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
-.link:hover { color: var(--hood-accent); }
+.callout p { margin: 0; font-weight: 600; }
+.points { margin: 8px 0 16px; padding-left: 20px; }
+.points li { margin-bottom: 12px; }
+.link { font: inherit; color: var(--accent-action); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+.link:hover { color: #0063cc; }

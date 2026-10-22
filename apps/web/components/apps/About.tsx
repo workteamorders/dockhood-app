@@ -1,23 +1,22 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ROBINHOOD_CHAIN_ID } from '@hood/shared';
+import { network } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
 import { contractRow } from '@/components/xp/ContractAddress';
 import { GroupBox } from '@/components/xp/Controls';
 import { HoodLogo } from '@/components/xp/Icons';
-import { Wordmark } from '@/components/xp/Wordmark';
 import { openApp } from '@/lib/openApp';
 import { X_HANDLE, X_URL } from '@/lib/social';
 import { useWindows, type WindowState } from '@/store/windows';
 import styles from './apps.module.css';
 
 const ROWS: [string, ReactNode][] = [
-  ['Chain', `Robinhood Chain (${ROBINHOOD_CHAIN_ID})`],
+  ['Chain', `${network.chain.name} (${network.chainId})`],
   ['Launch routing', 'Pons V2 bonding curve → Uniswap V4'],
   ['Rigor engine', 'DeepSeek — AI estimate, not a proof check'],
   ['Callouts', 'Live feed, Sign-In with Ethereum'],
-  ['Theme', 'Luna-style recreation, original assets'],
+  ['Theme', 'Light glass desktop. Original assets.'],
   [
     'X',
     <a key="x" href={X_URL} target="_blank" rel="noopener noreferrer">
@@ -35,8 +34,8 @@ export function About({ win }: { win: WindowState }) {
         <div className={styles.hero}>
           <HoodLogo size={48} />
           <div>
-            <Wordmark size={30} />
-            <div style={{ marginTop: 4 }}>Version 1.0 · Hood Pack 3</div>
+            <div className={styles.wordmark}>Dockhood</div>
+            <div style={{ marginTop: 4 }}>Version 1.0</div>
           </div>
         </div>
         <GroupBox label="System">

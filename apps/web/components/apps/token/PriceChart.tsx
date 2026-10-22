@@ -33,7 +33,7 @@ const BAR_SPACING = 4;
 const RIGHT_OFFSET = 3;
 
 /**
- * Candles in the pair asset (docs/BRIEF.md §5.4): white plot, grey grid, Tahoma 11 px, 180 px tall,
+ * Candles in the pair asset (docs/BRIEF.md §5.4): white plot, grey grid, Inter 12 px, 180 px tall,
  * with volume as a faint histogram along the bottom. Remount it (key) when the interval changes.
  */
 export function PriceChart({ data }: { data: Candles['candles'] }) {
@@ -49,13 +49,13 @@ export function PriceChart({ data }: { data: Candles['candles'] }) {
       autoSize: true,
       layout: {
         background: { color: '#ffffff' },
-        textColor: '#333333',
-        fontFamily: 'Tahoma, "Trebuchet MS", "Segoe UI", Arial, sans-serif',
-        fontSize: 11,
+        textColor: '#6a6a70',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+        fontSize: 12,
       },
       grid: { vertLines: { color: '#eeeeee' }, horzLines: { color: '#eeeeee' } },
-      rightPriceScale: { borderColor: '#c6c3b6' },
-      timeScale: { borderColor: '#c6c3b6', timeVisible: true, secondsVisible: false, barSpacing: BAR_SPACING, rightOffset: RIGHT_OFFSET },
+      rightPriceScale: { borderColor: 'rgba(0, 0, 0, 0.1)' },
+      timeScale: { borderColor: 'rgba(0, 0, 0, 0.1)', timeVisible: true, secondsVisible: false, barSpacing: BAR_SPACING, rightOffset: RIGHT_OFFSET },
       crosshair: { mode: 0 },
     });
     candles.current = c.addSeries(CandlestickSeries, {

@@ -3,6 +3,7 @@
 import { erc20Abi, zeroAddress, type Address } from 'viem';
 import { useBalance, useReadContracts } from 'wagmi';
 import { NATIVE_PAIR, ponsCurveAbi, type CurveState } from '@hood/shared';
+import { network } from '../network';
 
 export type LiveCurve = {
   state: CurveState;
@@ -19,7 +20,7 @@ export type LiveCurve = {
  * Refreshed every 4 s while `live`.
  */
 export function useLiveCurve(curve: Address, account: Address | undefined, live: boolean) {
-  const c = { address: curve, abi: ponsCurveAbi } as const;
+  const c = { address: curve, abi: ponsCurveAbi, chainId: network.chainId } as const;
   const q = useReadContracts({
     allowFailure: false,
     contracts: [
@@ -49,15 +50,16 @@ export function useLiveCurve(curve: Address, account: Address | undefined, live:
 export function useTradeBalances(token: Address, pair: Address, curve: Address, account: Address | undefined) {
   const native = pair === NATIVE_PAIR;
   const enabled = !!account;
-  const eth = useBalance({ address: account, query: { enabled: enabled && native, refetchInterval: 8_000 } });
+  const eth = useBalance({ address: account, chainId: network.chainId, query: { enabled: enabled && native, refetchInterval: 8_000 } });
   const owner = account ?? zeroAddress;
+  const erc20 = { abi: erc20Abi, chainId: network.chainId } as const;
   const q = useReadContracts({
     allowFailure: false,
     contracts: [
-      { address: token, abi: erc20Abi, functionName: 'balanceOf', args: [owner] },
-      { address: token, abi: erc20Abi, functionName: 'allowance', args: [owner, curve] },
-      { address: native ? token : pair, abi: erc20Abi, functionName: 'balanceOf', args: [owner] },
-      { address: native ? token : pair, abi: erc20Abi, functionName: 'allowance', args: [owner, curve] },
+      { ...erc20, address: token, functionName: 'balanceOf', args: [owner] },
+      { ...erc20, address: token, functionName: 'allowance', args: [owner, curve] },
+      { ...erc20, address: native ? token : pair, functionName: 'balanceOf', args: [owner] },
+      { ...erc20, address: native ? token : pair, functionName: 'allowance', args: [owner, curve] },
     ],
     query: { enabled, refetchInterval: 8_000 },
   });

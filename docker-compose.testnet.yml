@@ -1,0 +1,105 @@
+# Always use -f docker-compose.testnet.yml, never merge with the production compose file.
+# Base services work without deployment inputs. The opt-in indexer profile fails closed without them.
+name: dockhood-testnet
+
+x-testnet-inputs: &testnet-inputs
+  TESTNET_FACTORY_ADDRESS: ${TESTNET_FACTORY_ADDRESS:-}
+  TESTNET_START_BLOCK: ${TESTNET_START_BLOCK:-}
+  TESTNET_RPC_URL: ${TESTNET_RPC_URL:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: hood
+      POSTGRES_PASSWORD: hood
+      POSTGRES_DB: hood
+    ports:
+      - '127.0.0.1:54321:5432'
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/10-envio.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hood -d hood']
+      interval: 2s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '127.0.0.1:63791:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      retries: 15
+
+  hasura:
+    image: hasura/graphql-engine:v2.48.5
+    profiles: [indexer]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:8081:8080'
+    environment:
+      <<: *testnet-inputs
+      HASURA_GRAPHQL_DATABASE_URL: postgres://hood:hood@postgres:5432/envio
+      HASURA_GRAPHQL_ENABLE_CONSOLE: 'true'
+      HASURA_GRAPHQL_ADMIN_SECRET: ${TESTNET_HASURA_ADMIN_SECRET:-}
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: public
+      HASURA_GRAPHQL_NO_OF_RETRIES: '10'
+      HASURA_GRAPHQL_STRINGIFY_NUMERIC_TYPES: 'true'
+    entrypoint: ['/bin/sh', '-ec']
+    command:
+      - |
+        : "$${TESTNET_FACTORY_ADDRESS:?Set TESTNET_FACTORY_ADDRESS}"
+        : "$${TESTNET_START_BLOCK:?Set TESTNET_START_BLOCK}"
+        : "$${TESTNET_RPC_URL:?Set TESTNET_RPC_URL}"
+        : "$${HASURA_GRAPHQL_ADMIN_SECRET:?Set TESTNET_HASURA_ADMIN_SECRET}"
+        exec graphql-engine serve
+
+  indexer:
+    build:
+      context: ./apps/indexer
+      dockerfile: Dockerfile.dev
+    profiles: [indexer]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      hasura:
+        condition: service_started
+    environment:
+      <<: *testnet-inputs
+      ENVIO_CONFIG: config.testnet.local.yaml
+      ENVIO_PG_HOST: postgres
+      ENVIO_PG_PORT: '5432'
+      ENVIO_PG_USER: hood
+      ENVIO_PG_PASSWORD: hood
+      ENVIO_PG_DATABASE: envio
+      HASURA_GRAPHQL_ENDPOINT: http://hasura:8080/v1/metadata
+      HASURA_GRAPHQL_ADMIN_SECRET: ${TESTNET_HASURA_ADMIN_SECRET:-}
+      ENVIO_TUI: 'false'
+    volumes:
+      # Mount only the required inputs, never the mainnet .env or seed directory.
+      - ./apps/indexer/config.yaml:/app/config.yaml:ro
+      - ./apps/indexer/schema.graphql:/app/schema.graphql:ro
+      - ./apps/indexer/src:/app/src:ro
+      - ./apps/indexer/scripts:/app/scripts:ro
+      - indexer_node_modules:/app/node_modules
+      - indexer_codegen:/app/.envio
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        : "$${HASURA_GRAPHQL_ADMIN_SECRET:?Set TESTNET_HASURA_ADMIN_SECRET}"
+        node scripts/render-testnet.mjs
+        exec node_modules/.bin/envio start
+
+volumes:
+  postgres:
+  redis:
+  indexer_node_modules:
+  indexer_codegen:

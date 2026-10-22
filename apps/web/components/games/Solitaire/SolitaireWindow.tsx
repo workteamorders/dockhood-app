@@ -273,7 +273,7 @@ export default function SolitaireWindow({ win }: { win: WindowState }) {
             <SolitaireIcon size={40} />
             <div>
               <p>
-                <b>Solitaire</b> for hood.exe
+                <b>Solitaire</b> for Dockhood
               </p>
               <p>Klondike, turn one. Your games and statistics stay in this browser.</p>
               <p className={styles.note}>An original recreation; not affiliated with Microsoft.</p>

@@ -13,10 +13,11 @@ import { DesktopIcons, type DesktopItemId } from './DesktopIcons';
 import { MessageBox } from './Dialog';
 import { BOOT_MS, BootScreen, WELCOME_MS, WelcomeScreen } from './Boot';
 import { LogOffDialog, OffScreen, ShutDownDialog } from './Power';
-import { StartMenu } from './StartMenu';
+import { Dock } from '../mac/Dock';
+import { MenuBar } from '../mac/MenuBar';
+import { Launchpad } from '../mac/Launchpad';
 import { Balloons } from './Balloons';
 import { RiskDialog } from './RiskDialog';
-import { Taskbar } from './Taskbar';
 import { Wallpaper } from './Wallpaper';
 import { Window } from './Window';
 import styles from './Desktop.module.css';
@@ -31,7 +32,6 @@ export function Desktop() {
   const { disconnect } = useDisconnect();
 
   const [selected, setSelected] = useState<DesktopItemId | null>(null);
-  const [startOpen, setStartOpen] = useState(false);
   const [overlay, setOverlay] = useState<Overlay>(null);
 
   // First load: open the coin in /t/0x… or the app named in ?app=, else Welcome.
@@ -65,8 +65,17 @@ export function Desktop() {
     if (window.location.pathname + window.location.search !== next) window.history.replaceState(null, '', next);
   }, [windows, activeId]);
 
-  const closeStart = useCallback(() => setStartOpen(false), []);
+  const closeGames = useCallback(() => useWindows.getState().close('games'), []);
   const cancelOverlay = useCallback(() => setOverlay(null), []);
+
+  useEffect(() => {
+    const fitWindows = () => {
+      const { windows: open, resize } = useWindows.getState();
+      for (const win of open) resize(win.id, win.w, win.h);
+    };
+    window.addEventListener('resize', fitWindows);
+    return () => window.removeEventListener('resize', fitWindows);
+  }, []);
 
   // Restart / Power On run boot → welcome → desktop; Log Off skips straight to the welcome screen.
   const startUp = useCallback(
@@ -87,18 +96,24 @@ export function Desktop() {
   const boot = useCallback(() => startUp(true), [startUp]);
 
   const grayscale = overlay === 'shutdown' || overlay === 'logoff';
+  const games = windows.find((w) => w.appId === 'games' && !w.minimized);
 
   return (
-    <div className={`${styles.desktop} ${grayscale ? styles.grayscale : ''}`}>
+    <div data-desktop className={`${styles.desktop} ${grayscale ? styles.grayscale : ''}`}>
       <Wallpaper />
-      <div
+      <MenuBar onLogOff={() => setOverlay('logoff')} onShutDown={() => setOverlay('shutdown')} />
+      <main
         className={styles.workspace}
+        data-workspace
+        aria-label="Dockhood desktop"
+        inert={!!games}
         onPointerDown={(e) => {
           if (e.target === e.currentTarget) setSelected(null);
         }}
       >
         <DesktopIcons selected={selected} onSelect={setSelected} />
         {windows.map((win) => {
+          if (win.appId === 'games') return null;
           const app = APPS[win.appId];
           const Content = APP_COMPONENTS[win.appId];
           return (
@@ -115,23 +130,10 @@ export function Desktop() {
             </Window>
           );
         })}
-      </div>
+      </main>
 
-      {startOpen && (
-        <StartMenu
-          onClose={closeStart}
-          onLogOff={() => {
-            setStartOpen(false);
-            setOverlay('logoff');
-          }}
-          onShutDown={() => {
-            setStartOpen(false);
-            setOverlay('shutdown');
-          }}
-        />
-      )}
-
-      <Taskbar startOpen={startOpen} onStartToggle={() => setStartOpen((o) => !o)} unreadCallouts={unread} />
+      {games && <Launchpad onClose={closeGames} />}
+      <Dock unread={unread} />
       <Balloons />
       <RiskDialog />
 
@@ -159,7 +161,7 @@ export function Desktop() {
       )}
       {overlay === 'standby' && (
         <MessageBox title="Stand By" onClose={cancelOverlay}>
-          <p>hood.exe can&apos;t stand by — the chain never sleeps.</p>
+          <p>Dockhood stays on. The chain never sleeps.</p>
           <p>Close windows you aren&apos;t using, or choose Turn Off.</p>
         </MessageBox>
       )}

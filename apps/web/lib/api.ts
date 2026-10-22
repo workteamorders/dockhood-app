@@ -19,12 +19,12 @@ export class ApiError extends Error {
 const errorBody = z.object({ error: z.string() });
 
 async function request<T>(path: string, init: RequestInit, schema: z.ZodType<T>, timeoutMs = 15_000): Promise<T> {
-  if (!API_URL) throw new ApiError('The hood.exe API is not configured (NEXT_PUBLIC_API_URL).', 0);
+  if (!API_URL) throw new ApiError('The Dockhood API is not configured (NEXT_PUBLIC_API_URL).', 0);
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, { ...init, credentials: 'include', signal: AbortSignal.timeout(timeoutMs) });
   } catch {
-    throw new ApiError('Could not reach the hood.exe API. Check your connection and try again.', 0);
+    throw new ApiError('Could not reach the Dockhood API. Check your connection and try again.', 0);
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {

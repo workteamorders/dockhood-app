@@ -5,6 +5,7 @@ import { shortAddress } from '@hood/shared';
 import { formatQuote, timeAgo } from '@/components/apps/explore/format';
 import { fetchRecentActivity, type Activity, type Callout } from '@/lib/api';
 import { playBalloonSound, unlockBalloonSound } from '@/lib/balloonSound';
+import { displayTicker } from '@/lib/hoodToken';
 import { onLive, startLive } from '@/lib/live';
 import { openApp, openToken } from '@/lib/openApp';
 import { tradeBalloonFeed, type TradeBalloon } from '@/lib/tradeBalloons';
@@ -129,10 +130,11 @@ function TradeBalloonView({ balloon }: { balloon: TradeBalloon }) {
 
   const items = balloon.items;
   const latest = items[items.length - 1];
-  const tickers = new Set(items.map((a) => a.ticker));
+  const tickers = new Set(items.map((a) => displayTicker(a.token, a.ticker)));
+  const ticker = displayTicker(latest.token, latest.ticker);
   const one = items.length === 1;
   const open = () => {
-    openToken(latest.token, latest.ticker || undefined);
+    openToken(latest.token, ticker || undefined);
     useTray.getState().dismissTrade(balloon.id);
   };
   // The first visit's balloon can be minutes old; say so.
@@ -150,7 +152,7 @@ function TradeBalloonView({ balloon }: { balloon: TradeBalloon }) {
       <div className={styles.head}>
         <b>
           {one ? `${sideIcon(latest)} ${latest.side === 'buy' ? 'Buy' : 'Sell'}` : `📈 ${items.length} trades`}
-          {tickers.size === 1 && latest.ticker ? <span className={styles.ticker}> · ${latest.ticker}</span> : null}
+          {tickers.size === 1 && ticker ? <span className={styles.ticker}> · ${ticker}</span> : null}
         </b>
         <button
           type="button"
@@ -174,7 +176,7 @@ function TradeBalloonView({ balloon }: { balloon: TradeBalloon }) {
           {items.slice(-LINES).reverse().map((a) => (
             <li key={a.id}>
               {sideIcon(a)} <b>{shortAddress(a.trader)}</b> {bought(a)}
-              {tickers.size > 1 && a.ticker ? <span className={styles.ticker}> ${a.ticker}</span> : null}
+              {tickers.size > 1 && a.ticker ? <span className={styles.ticker}> ${displayTicker(a.token, a.ticker)}</span> : null}
             </li>
           ))}
           {items.length > LINES && <li className={styles.ago}>and {items.length - LINES} more</li>}
@@ -190,7 +192,7 @@ function Balloon({ callout: c }: { callout: Callout }) {
     return () => clearTimeout(t);
   }, [c.id]);
 
-  const who = c.kind === 'system' ? 'hood.exe' : (c.nickname ?? shortAddress(c.wallet));
+  const who = c.kind === 'system' ? 'Dockhood' : (c.nickname ?? shortAddress(c.wallet));
   return (
     <div
       role="button"
@@ -216,7 +218,7 @@ function Balloon({ callout: c }: { callout: Callout }) {
       </div>
       <p className={styles.text}>
         <b>{who}</b>
-        {c.ticker ? <span className={styles.ticker}> ${c.ticker}</span> : null}: {c.text.length > 120 ? `${c.text.slice(0, 119)}…` : c.text}
+        {c.ticker ? <span className={styles.ticker}> ${displayTicker(c.tokenAddress, c.ticker)}</span> : null}: {c.text.length > 120 ? `${c.text.slice(0, 119)}…` : c.text}
       </p>
     </div>
   );

@@ -1,4 +1,5 @@
 export * from './chain';
+export * from './network';
 export * from './pons';
 export * from './abi';
 export * from './quote';

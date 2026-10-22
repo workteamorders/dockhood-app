@@ -2,12 +2,13 @@
 
 import { BaseError, ContractFunctionRevertedError, UserRejectedRequestError, type Address } from 'viem';
 import { useReadContract, useReadContracts } from 'wagmi';
-import { NATIVE_PAIR, PONS_V2, findPair, ponsFactoryAbi } from '@hood/shared';
+import { NATIVE_PAIR, ponsFactoryAbi } from '@hood/shared';
+import { findPair, network } from '../network';
 
-/** Pons has one launch config on 4663 (9 Oct 2026); the wizard refuses to launch if it is ever disabled. */
+/** The wizard refuses to launch if the selected factory's config is disabled. */
 export const LAUNCH_CONFIG_ID = 0n;
 
-const factory = { address: PONS_V2.launchFactory, abi: ponsFactoryAbi } as const;
+const factory = { address: network.pons.launchFactory, abi: ponsFactoryAbi, chainId: network.chainId } as const;
 
 export type LaunchTerms = {
   launchFee: bigint;

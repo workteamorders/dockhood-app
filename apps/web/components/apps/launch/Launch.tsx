@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Hash } from 'viem';
-import { addressUrl, findPair, formatAmount, normalizeStatement, type RigorScore } from '@hood/shared';
+import { formatAmount, normalizeStatement, type RigorScore } from '@hood/shared';
+import { addressUrl, findPair } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
 import { ProgressBar } from '@/components/xp/Controls';
 import { Dialog, MessageBox } from '@/components/xp/Dialog';
@@ -39,7 +40,7 @@ import styles from './Launch.module.css';
 
 const HEADERS: Record<Page, [string, string]> = {
   identity: ['Name your coin', 'Pick a name, ticker and logo. They can never be changed after launch.'],
-  theorem: ['State your theorem', 'Every hood.exe coin carries a mathematical statement and an AI rigor score.'],
+  theorem: ['State your theorem', 'Every Dockhood coin carries a mathematical statement and an AI rigor score.'],
   economics: ['Set the economics', 'Choose what the coin trades against, your creator fees and an optional dev buy.'],
   review: ['Review and launch', 'Check everything. Pons launch settings are permanent.'],
 };
@@ -50,7 +51,7 @@ const STEP_LABELS: [DeployStep, string][] = [
   ['approve', 'Approving the dev buy in your wallet'],
   ['sign', 'Waiting for your signature'],
   ['confirm', 'Confirming on Robinhood Chain'],
-  ['record', 'Recording the launch on hood.exe'],
+  ['record', 'Recording the launch on Dockhood'],
 ];
 
 type Deploy =
@@ -196,7 +197,7 @@ export function Launch({ win }: { win: WindowState }) {
 
       {canLaunch === false && !inviteDismissed && (
         <MessageBox
-          title="Launch.exe"
+          title="Launch"
           kind="info"
           onClose={() => setInviteDismissed(true)}
           buttons={
@@ -217,7 +218,7 @@ export function Launch({ win }: { win: WindowState }) {
 
       {deploy.state === 'confirm' && (
         <MessageBox
-          title="Launch.exe"
+          title="Launch"
           kind="question"
           onClose={() => setDeploy({ state: 'idle' })}
           buttons={
@@ -263,7 +264,7 @@ export function Launch({ win }: { win: WindowState }) {
           <p style={{ margin: 0 }}>
             <TxLink hash={deploy.result.txHash} label="Transaction" />
           </p>
-          {!deploy.result.recorded && <p className={styles.hint}>hood.exe will pick the launch up from the chain shortly.</p>}
+          {!deploy.result.recorded && <p className={styles.hint}>Dockhood will pick the launch up from the chain shortly.</p>}
         </MessageBox>
       )}
     </div>

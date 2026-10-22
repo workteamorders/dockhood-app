@@ -1,70 +1,74 @@
-/* XP-style tray balloons (docs/BRIEF.md §5.6): pale yellow, rounded, an arrow down to the tray. */
 .stack {
   position: fixed;
-  right: 70px;
-  bottom: calc(var(--taskbar-h) + 10px);
+  right: 20px;
+  bottom: calc(var(--taskbar-h, 88px) + 16px);
   z-index: 9000;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 10px;
+  max-width: calc(100vw - 40px);
   pointer-events: none;
 }
 
 .balloon {
   position: relative;
-  width: 260px;
-  padding: 6px 8px 8px;
-  border: 1px solid #1c1c1c;
-  border-radius: 7px;
-  background: #ffffe1;
-  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.3);
+  width: 320px;
+  max-width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--glass-light);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  color: var(--text-primary);
+  font: 400 13px/1.5 var(--font-ui);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
   pointer-events: auto;
   /* Visible for FADE_MS, then fades over the rest of the 8 s (timing set inline). */
   animation-name: fade;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
-.balloon:last-child::after {
-  content: '';
-  position: absolute;
-  right: 28px;
-  bottom: -11px;
-  border-width: 11px 0 0 14px;
-  border-style: solid;
-  border-color: #ffffe1 transparent transparent transparent;
-  filter: drop-shadow(1px 1px 0 #1c1c1c);
-}
-.balloon:hover { animation-play-state: paused; }
+.balloon:hover, .balloon:focus-within { animation-play-state: paused; }
+.balloon:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 @keyframes fade {
   to { opacity: 0; }
 }
 
-.head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.head > b { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .close {
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  border: 1px solid #b4b4b4;
-  border-radius: 3px;
-  background: #d24726;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
 }
-.text { margin: 0; overflow-wrap: anywhere; line-height: 1.35; }
-.ticker { color: var(--hood-accent); font-weight: 700; }
+.close:hover { background: var(--surface); color: var(--text-primary); }
+.close:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.close svg [stroke] { stroke: currentColor; }
+.text { margin: 0; overflow-wrap: anywhere; line-height: 1.5; }
+.ticker { color: #0068d6; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
   .balloon { animation: none; }
 }
 
 @media (max-width: 640px) {
-  .stack { left: 8px; right: 8px; align-items: stretch; }
+  .stack { left: 12px; right: 12px; max-width: none; align-items: stretch; }
   .balloon { width: auto; }
-  .balloon:last-child::after { display: none; }
+  .close { width: 44px; height: 44px; }
 }
 
 /* Trade balloons: one trade, or a few merged */
-.lines { margin: 0; padding: 0; list-style: none; line-height: 1.4; }
+.lines { margin: 0; padding: 0; list-style: none; line-height: 1.5; }
 .lines li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ago { color: #6a6a6a; }
+.ago { color: var(--text-secondary); }

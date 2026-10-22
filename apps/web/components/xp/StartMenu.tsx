@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAccountModal, useConnectModal } from '@rainbow-me/rainbowkit';
-import { addressUrl, EXPLORER_MAINNET } from '@hood/shared';
+import { addressUrl, network } from '@/lib/network';
 import { APPS, GAME_APPS, START_APPS, type AppId } from '@/components/apps/meta';
 import { openApp } from '@/lib/openApp';
 import { X_URL } from '@/lib/social';
@@ -58,7 +58,7 @@ export function StartMenu({ onClose, onLogOff, onShutDown }: StartMenuProps) {
   };
 
   return (
-    <div ref={ref} className={styles.menu} role="menu" aria-label="Start menu">
+    <div ref={ref} className={styles.menu} role="menu" aria-label="Dockhood menu">
       <div className={styles.header}>
         <span className={styles.avatar}>
           <HoodLogo size={40} />
@@ -117,7 +117,7 @@ export function StartMenu({ onClose, onLogOff, onShutDown }: StartMenuProps) {
           <button type="button" role="menuitem" className={styles.item} onClick={() => launch('welcome')}>
             <HelpIcon size={32} />
             <span className={styles.itemText}>
-              <span className={styles.itemName}>Start Here</span>
+              <span className={styles.itemName}>Welcome to Dockhood</span>
               <span className={styles.desc}>{APPS.welcome.description}</span>
             </span>
           </button>
@@ -149,7 +149,7 @@ export function StartMenu({ onClose, onLogOff, onShutDown }: StartMenuProps) {
           <a
             role="menuitem"
             className={styles.item}
-            href={address ? addressUrl(address) : EXPLORER_MAINNET}
+            href={address ? addressUrl(address) : network.explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
@@ -159,22 +159,22 @@ export function StartMenu({ onClose, onLogOff, onShutDown }: StartMenuProps) {
           </a>
           <a role="menuitem" className={styles.item} href={X_URL} target="_blank" rel="noopener noreferrer" onClick={onClose}>
             <XIcon size={24} />
-            <span className={styles.itemName}>hood.exe on X</span>
+            <span className={styles.itemName}>Dockhood on X</span>
           </a>
           <button type="button" role="menuitem" className={styles.item} onClick={() => launch('about')}>
             <InfoIcon size={24} />
-            <span className={styles.itemName}>About hood.exe</span>
+            <span className={styles.itemName}>About Dockhood</span>
           </button>
           <button type="button" role="menuitem" className={styles.item} onClick={() => launch('recycle')}>
             <RecycleBinIcon size={24} />
-            <span className={styles.itemName}>Recycle Bin</span>
+            <span className={styles.itemName}>Trash</span>
           </button>
         </div>
       </div>
 
       <div className={styles.footer}>
         <button type="button" className={styles.footerBtn} onClick={onLogOff}>
-          <KeyIcon size={22} /> Log Off
+          <KeyIcon size={22} /> Log Out
         </button>
         <button type="button" className={styles.footerBtn} onClick={onShutDown}>
           <TurnOffIcon size={22} /> Shut Down

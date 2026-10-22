@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RIGOR_DISCLAIMER, addressUrl, shortAddress } from '@hood/shared';
+import { RIGOR_DISCLAIMER, shortAddress } from '@hood/shared';
+import { addressUrl } from '@/lib/network';
 import { ProgressBar, Tabs } from '@/components/xp/Controls';
 
 import { Latex } from '@/components/xp/Latex';
 import { RigorBadge } from '@/components/xp/RigorBadge';
 import { ApiError, CHART_INTERVALS, fetchCandles, fetchToken, type ChartInterval, type TokenDetail as Token } from '@/lib/api';
 import { ipfsUrl } from '@/lib/ipfs';
+import { displayTicker } from '@/lib/hoodToken';
 import { FormalProofTab } from '@/components/verification/FormalProofTab';
 import { VerificationBadge } from '@/components/verification/VerificationBadge';
 import { Button } from '@/components/xp/Button';
@@ -28,7 +30,7 @@ export function TokenDetail({ win }: { win: WindowState }) {
   const paused = win.minimized;
   const q = useQuery({ queryKey: ['token', address.toLowerCase()], queryFn: () => fetchToken(address), enabled: !!address, refetchInterval: paused ? false : 15_000 });
 
-  const symbol = q.data?.symbol;
+  const symbol = displayTicker(q.data?.token, q.data?.symbol);
   useEffect(() => {
     if (symbol) useWindows.getState().rename(win.id, `$${symbol} — Token Detail`);
   }, [symbol, win.id]);
@@ -54,7 +56,7 @@ export function TokenDetail({ win }: { win: WindowState }) {
         <div className={styles.tabs}>
           <Tabs
             tabs={[
-              { id: 'trades', label: 'Trades', content: <TradesTab address={t.token} symbol={t.symbol} pairSymbol={t.pair.symbol} paused={paused} /> },
+              { id: 'trades', label: 'Trades', content: <TradesTab address={t.token} symbol={displayTicker(t.token, t.symbol)} pairSymbol={t.pair.symbol} paused={paused} /> },
               { id: 'callouts', label: 'Callouts', content: <CalloutFeed token={t.token} ticker={t.symbol} /> },
               { id: 'theorem', label: 'Theorem', content: <TheoremTab token={t} /> },
               ...(t.formal ? [{ id: 'formal', label: 'Formal ✓', content: <FormalProofTab address={t.token} /> }] : []),
@@ -70,12 +72,13 @@ export function TokenDetail({ win }: { win: WindowState }) {
 }
 
 function Header({ token: t }: { token: Token }) {
+  const symbol = displayTicker(t.token, t.symbol);
   return (
     <div className={styles.header}>
-      <TokenLogo logo={t.logo} symbol={t.symbol} size={40} />
+      <TokenLogo logo={t.logo} symbol={symbol} size={40} />
       <div className={styles.titles}>
         <div>
-          <b>${t.symbol}</b> <span className={styles.name}>{t.name}</span>
+          <b>${symbol}</b> <span className={styles.name}>{t.name}</span>
         </div>
         <div className={styles.snippet}>{t.hood && t.statement ? <Latex source={t.statement} /> : <span className={styles.plain}>{t.blurb}</span>}</div>
       </div>
@@ -104,7 +107,8 @@ function Header({ token: t }: { token: Token }) {
 function Share({ token: t }: { token: Token }) {
   const [copied, setCopied] = useState(false);
   const link = typeof window === 'undefined' ? '' : `${window.location.origin}/t/${t.token}`;
-  const text = t.hood && t.rigorScore != null ? `${t.symbol}: a theorem coin on hood.exe, rigor ${t.rigorScore}/100` : `${t.symbol} on hood.exe`;
+  const symbol = displayTicker(t.token, t.symbol);
+  const text = t.hood && t.rigorScore != null ? `${symbol}: a theorem coin on Dockhood, rigor ${t.rigorScore}/100` : `${symbol} on Dockhood`;
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -172,7 +176,7 @@ function TheoremTab({ token: t }: { token: Token }) {
     return (
       <div>
         <p className={styles.muted} style={{ marginTop: 0 }}>
-          This coin wasn&apos;t launched on hood.exe, so it carries no theorem. Its description:
+          This coin wasn&apos;t launched on Dockhood, so it carries no theorem. Its description:
         </p>
         <p className={styles.description}>{t.description || 'No description.'}</p>
       </div>

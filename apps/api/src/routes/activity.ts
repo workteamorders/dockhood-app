@@ -10,7 +10,7 @@ const LIMIT = 10;
  * nicety, so no indexer (or a failing one) is an empty list rather than an error.
  */
 export async function activityRoutes(app: FastifyInstance) {
-  const { db, envio, now } = app.deps;
+  const { db, envio, now, env: { network } } = app.deps;
   // One answer shared by every visitor for 10 s keeps this inside Envio's per-minute query budget.
   let cache: { at: number; body: { items: ActivityItem[] } } | null = null;
 
@@ -20,7 +20,7 @@ export async function activityRoutes(app: FastifyInstance) {
     let items: ActivityItem[] = [];
     if (envio) {
       try {
-        const { tiers, tickers } = await watchedTokens(db);
+        const { tiers, tickers } = await watchedTokens(db, network);
         const since = Math.floor(now().getTime() / 1000) - RECENT_WINDOW_S;
         items = (await envio.notableTrades(tiers, { since }, LIMIT, 'interactive')).map((t) => toActivity(t, tickers));
       } catch (e) {

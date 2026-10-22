@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "codegen": "node scripts/envio.mjs codegen",
+    "render:testnet": "node scripts/render-testnet.mjs",
+    "start:testnet": "node scripts/render-testnet.mjs && ENVIO_CONFIG=config.testnet.local.yaml envio start",
+    "test:testnet": "node --test scripts/render-testnet.test.mjs && vitest run src/handlers/seed-isolation.test.ts",
     "test": "node scripts/envio.mjs test",
     "typecheck": "node scripts/envio.mjs ensure-types && tsc --noEmit",
     "lint": "node scripts/envio.mjs ensure-types && tsc --noEmit",

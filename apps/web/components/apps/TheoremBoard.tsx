@@ -12,7 +12,7 @@ export function TheoremBoard({ win }: { win: WindowState }) {
       <div className={styles.pane}>
         <div className={styles.hero}>
           <TheoremIcon size={32} />
-          <b style={{ fontSize: 12 }}>Every hood.exe coin carries a theorem.</b>
+          <b style={{ fontSize: 18 }}>Every Dockhood coin carries a theorem.</b>
         </div>
         <ol className={styles.steps}>
           <li>Write a mathematical statement in LaTeX when you launch.</li>

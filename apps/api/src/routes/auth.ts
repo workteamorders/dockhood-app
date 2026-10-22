@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import { getAddress, isHex } from 'viem';
 import { generateSiweNonce, parseSiweMessage } from 'viem/siwe';
 import { z } from 'zod';
-import { ROBINHOOD_CHAIN_ID } from '@hood/shared';
 import { HttpError, SESSION_COOKIE } from '../app';
 import { schema } from '../db';
 import { allow } from '../kv';
@@ -18,7 +17,7 @@ const verifyBody = z.object({
   signature: z.string().refine((s) => isHex(s), 'Invalid signature.'),
 });
 
-/** SIWE (docs/BRIEF.md §10): 10-minute nonce, 7-day httpOnly session cookie on chain 4663. */
+/** SIWE: 10-minute nonce, 7-day httpOnly session cookie on the configured chain. */
 export async function authRoutes(app: FastifyInstance) {
   const { db, kv, chain, env } = app.deps;
   // The SIWE domain must be a site we serve the app from (a CORS_ORIGINS host).
@@ -45,7 +44,7 @@ export async function authRoutes(app: FastifyInstance) {
     const now = app.deps.now().getTime();
 
     if (!msg.address || !msg.nonce || !msg.domain || !msg.issuedAt) throw new HttpError(400, 'Invalid sign-in message.');
-    if (msg.chainId !== ROBINHOOD_CHAIN_ID) throw new HttpError(400, 'Sign in on Robinhood Chain.');
+    if (msg.chainId !== env.network.chainId) throw new HttpError(400, `Sign in on ${env.network.chain.name}.`);
     if (!domains.has(msg.domain)) throw new HttpError(400, 'This sign-in message is for another site.');
     const issued = msg.issuedAt.getTime();
     if (issued > now + CLOCK_SKEW_MS || issued < now - NONCE_TTL * 1000) throw new HttpError(400, 'Sign-in message expired. Try again.');

@@ -50,7 +50,8 @@ const CASCADE = 24;
 
 function viewport() {
   if (typeof window === 'undefined') return { vw: 1280, vh: 800 };
-  return { vw: window.innerWidth, vh: window.innerHeight - 30 };
+  const workspace = document.querySelector('[data-workspace]')?.getBoundingClientRect();
+  return { vw: workspace?.width ?? window.innerWidth, vh: workspace?.height ?? window.innerHeight - 132 };
 }
 
 function topVisible(windows: WindowState[], exclude?: string): string | null {
@@ -86,8 +87,8 @@ export const useWindows = create<WindowStore>((set, get) => ({
     const width = Math.min(w, vw - 8);
     const height = Math.min(h, vh - 8);
     const n = get().windows.length % 6;
-    const x = Math.max(4, Math.round((vw - width) / 2) + (n - 2) * CASCADE);
-    const y = Math.max(4, Math.round((vh - height) / 2.4) + (n - 2) * CASCADE);
+    const x = Math.max(4, Math.min(vw - width - 4, Math.round((vw - width) / 2) + n * CASCADE));
+    const y = Math.max(4, Math.min(vh - height - 4, Math.round((vh - height) / 2) + n * CASCADE));
 
     set((s) => ({
       windows: [
@@ -139,9 +140,9 @@ export const useWindows = create<WindowStore>((set, get) => ({
       const { vw, vh } = viewport();
       const width = Math.round(Math.min(w, vw - 8));
       const height = Math.round(Math.min(h, vh - 8));
-      if (width === win.w && height === win.h) return s;
       const x = Math.max(4, Math.min(win.x, vw - width - 4));
       const y = Math.max(4, Math.min(win.y, vh - height - 4));
+      if (width === win.w && height === win.h && x === win.x && y === win.y) return s;
       return { windows: s.windows.map((v) => (v.id === id ? { ...v, x, y, w: width, h: height } : v)) };
     }),
 

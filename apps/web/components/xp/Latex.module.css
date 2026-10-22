@@ -1,9 +1,10 @@
-.latex { font-family: var(--font-display); white-space: pre-wrap; overflow-wrap: anywhere; }
+.latex { font-family: var(--font-ui); color: var(--text-primary); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .latex :global(.katex) { font-size: 1.05em; }
-.latex :global(.katex-display) { margin: 4px 0; overflow-x: auto; overflow-y: hidden; }
+.latex :global(.katex-display) { margin: 10px 0; padding: 4px 0; overflow-x: auto; overflow-y: hidden; }
 .error {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--bad);
-  text-decoration: underline wavy var(--bad);
+  font-size: 12px;
+  color: #b62821;
+  text-decoration: underline wavy rgba(182, 40, 33, 0.5);
+  text-underline-offset: 3px;
 }

@@ -1,90 +1,100 @@
-/* Group box */
 .group {
-  border: 1px solid #d0d0bf;
-  border-radius: 3px;
-  margin: 0 0 10px;
-  padding: 8px 10px 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  margin: 0 0 14px;
+  padding: 12px 14px 14px;
+  color: var(--text-primary);
+  font: 400 14px/1.5 var(--font-ui);
 }
-.group > legend { color: #0046d5; padding: 0 3px; }
+.group > legend { color: var(--text-secondary); padding: 0 6px; font-size: 12px; font-weight: 600; }
 
-/* Tab control */
-.tabs { display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 12px; }
 .tabList {
   display: flex;
-  gap: 1px;
-  padding-left: 3px;
-  position: relative;
-  z-index: 1;
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  overflow-x: auto;
 }
 .tab {
-  font: inherit;
-  font-size: 11px;
-  color: #000;
-  padding: 3px 10px 2px;
-  border: 1px solid #919b9c;
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-  background: linear-gradient(to bottom, #fff, #fcfcfe 26%, #f4f3ee 70%, #e7e6df);
-  margin-top: 2px;
+  flex: 1 0 auto;
+  min-height: 36px;
+  font: 500 13px/1.4 var(--font-ui);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
 }
-.tab:hover { border-top: 2px solid #f9c94c; padding-top: 2px; }
+.tab:hover { color: var(--text-primary); background: var(--glass-light); }
 .tabActive {
-  margin-top: 0;
-  padding-bottom: 4px;
-  background: #fcfcfe;
-  border-top: 2px solid var(--hood-accent);
-  margin-bottom: -1px;
+  color: var(--text-primary);
+  font-weight: 600;
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
 }
+.tab:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
 .tabPanel {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
-  border: 1px solid #919b9c;
-  background: #fcfcfe;
-  /* Sticky table headers inside offset by this, so they stick to the edge rather than below the padding. */
-  --panel-pad: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: 400 14px/1.5 var(--font-ui);
+  /* Sticky table headers use the same inset as the panel. */
+  --panel-pad: 12px;
   padding: var(--panel-pad);
-  box-shadow: 1px 1px 0 #d0d0bf;
 }
+.tabPanel:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
 
-/* Progress bar (block style) */
 .progress {
-  height: 14px;
-  border: 1px solid #686868;
-  border-radius: 3px;
-  background: #fff;
-  padding: 1px;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-muted);
   overflow: hidden;
 }
 .progressFill {
   height: 100%;
-  background: repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 8px,
-      #fff 8px,
-      #fff 10px
-    ),
-    linear-gradient(to bottom, #acedad 0%, #7be47d 14%, #4cda50 28%, #2ed330 42%, #42d845 57%, #76e275 71%, #8fe791 85%, #fff 100%);
+  border-radius: inherit;
+  background: var(--accent-primary);
   transition: width 0.3s;
 }
 
-/* Status bar */
 .status {
   flex: 0 0 auto;
   display: flex;
-  gap: 2px;
-  padding: 2px 3px;
-  background: var(--window-chrome);
-  border-top: 1px solid #d6d2c2;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 8px 12px;
+  background: var(--glass-light);
+  border-top: 1px solid var(--line);
+  color: var(--text-secondary);
+  font: 400 12px/1.5 var(--font-ui);
 }
 .statusCell {
   flex: 1 1 auto;
-  padding: 1px 4px;
-  border: 1px solid;
-  border-color: #a5a294 #fff #fff #a5a294;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.statusCell:last-child { flex: 0 0 auto; }
+.statusCell:last-child { flex: 0 1 auto; }
+
+@media (max-width: 640px) {
+  .tab { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill { transition: none; }
+}

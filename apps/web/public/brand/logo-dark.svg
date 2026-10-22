@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title">
+  <title id="title">Dockhood logo for dark backgrounds</title>
+  <defs>
+    <mask id="dolphin-eye" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+      <rect width="32" height="32" fill="#fff"/>
+      <circle cx="23" cy="13.5" r=".8" fill="#000"/>
+    </mask>
+  </defs>
+  <path d="M6 18C9 11 14 8 19 9L22 6L23 11C25 12 26 14 28 15L24 16C22 19 19 21 15 21L17 17C13 16 10 17 8 20L6 23L5 20L3 18H6Z" fill="#fff" mask="url(#dolphin-eye)"/>
+  <path d="M11 25H25" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+</svg>

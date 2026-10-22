@@ -9,7 +9,6 @@ import {
   NATIVE_PAIR,
   buildDescription,
   buildTokenParams,
-  findPair,
   formatAmount,
   formatBps,
   planLaunch,
@@ -21,6 +20,7 @@ import { Latex } from '@/components/xp/Latex';
 import { RigorBadge } from '@/components/xp/RigorBadge';
 import { LAUNCH_CONFIG_ID, type LaunchTerms } from '@/lib/pons/launch';
 import { wagmiConfig } from '@/lib/wagmi';
+import { findPair, network } from '@/lib/network';
 import { CurvePreview } from './CurvePreview';
 import { usePairBalance } from './EconomicsPage';
 import { devBuyQuote } from './deploy';
@@ -39,10 +39,11 @@ function useGasEstimate(draft: Draft, terms: LaunchTerms | undefined, account: A
     staleTime: 30_000,
     retry: false,
     queryFn: async () => {
-      const client = getPublicClient(wagmiConfig);
+      const client = getPublicClient(wagmiConfig, { chainId: network.chainId });
+      if (!client) throw new Error('The selected network client is unavailable.');
       const cid = 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku';
       const params = buildTokenParams({
-        name: draft.name || 'hood.exe',
+        name: draft.name || 'Dockhood',
         symbol: draft.ticker || 'HOOD',
         logo: `ipfs://${cid}`,
         description: buildDescription(draft.statement || '1 + 1 = 2', currentRigor(draft)?.score ?? null, cid),
@@ -56,7 +57,7 @@ function useGasEstimate(draft: Draft, terms: LaunchTerms | undefined, account: A
       const base = { params, launchConfigId: LAUNCH_CONFIG_ID, pairToken: draft.pair, launchFee: terms!.launchFee, minTokensOut: 0n, recipient: account! };
       const sim = { account: account!, stateOverride: [{ address: account!, balance: parseEther('1000') }] };
       // An ERC-20 dev buy can't be estimated before the approval exists; the bare launch is the floor.
-      const plan = planLaunch({ ...base, quoteIn: draft.pair === NATIVE_PAIR ? quoteIn : 0n });
+      const plan = planLaunch({ ...base, quoteIn: draft.pair === NATIVE_PAIR ? quoteIn : 0n }, network.pons);
       const [gas, fees] = await Promise.all([
         plan.kind === 'launchToken'
           ? client.estimateContractGas({ ...plan.request, ...sim })
@@ -162,7 +163,7 @@ export function ReviewPage({ draft, terms, account, canLaunch }: Props) {
           </tr>
         </tbody>
       </table>
-      <p className={styles.hint} style={{ marginTop: 0 }}>No hood.exe platform fee.</p>
+      <p className={styles.hint} style={{ marginTop: 0 }}>No Dockhood platform fee.</p>
 
       {quote?.completesCurve && (
         <Notice warn>

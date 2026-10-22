@@ -5,18 +5,18 @@ import { APPS, DESKTOP_APPS, type AppId } from '@/components/apps/meta';
 import { openApp } from '@/lib/openApp';
 import { X_URL } from '@/lib/social';
 import styles from './Desktop.module.css';
-import { XIcon } from './Icons';
+import { XIcon } from '../mac/AppIcon';
 
 const DOUBLE_TAP_MS = 400;
 
 /** Desktop shortcuts that open a web page in a new tab instead of a window. */
-const LINKS = { x: { label: 'hood.exe on X', Icon: XIcon, href: X_URL } };
+const LINKS = { x: { label: '@dockhood', Icon: XIcon, href: X_URL } };
 type LinkId = keyof typeof LINKS;
 export type DesktopItemId = AppId | LinkId;
 
 const isLink = (id: DesktopItemId): id is LinkId => id in LINKS;
 /** Links sit just before About and the Recycle Bin. */
-const ITEMS: DesktopItemId[] = DESKTOP_APPS.flatMap((id): DesktopItemId[] => (id === 'about' ? ['x', id] : [id]));
+const ITEMS: DesktopItemId[] = [...DESKTOP_APPS, 'x'];
 
 function open(id: DesktopItemId) {
   if (isLink(id)) window.open(LINKS[id].href, '_blank', 'noopener,noreferrer');
@@ -63,7 +63,7 @@ export function DesktopIcons({ selected, onSelect }: { selected: DesktopItemId |
               aria-label={`${app.label} — double-click to open`}
             >
               <span className={styles.iconImg}>
-                <app.Icon size={48} />
+                <app.Icon size={96} />
               </span>
               <span className={styles.label}>{app.label}</span>
             </button>

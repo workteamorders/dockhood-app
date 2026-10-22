@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a8fd8"/><stop offset=".45" stop-color="#2b6cb0"/><stop offset="1" stop-color="#1a4b85"/></linearGradient></defs><rect x="1.5" y="1.5" width="29" height="29" rx="5" fill="url(#b)" stroke="#123a6b"/><text x="15.5" y="24" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="21" fill="#fff">H</text><circle cx="25.2" cy="25.2" r="2.6" fill="#ff6b00"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <title>Dockhood</title>
+  <defs>
+    <linearGradient id="sunset" x1="2" y1="0" x2="29" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff9a56"/>
+      <stop offset=".48" stop-color="#f45b7a"/>
+      <stop offset="1" stop-color="#3a2d6b"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="url(#sunset)"/>
+  <rect x="1.5" y="1.5" width="29" height="29" rx="6.5" stroke="#fff" stroke-opacity=".3"/>
+  <path d="M6 18C9 11 14 8 19 9L22 6L23 11C25 12 26 14 28 15L24 16C22 19 19 21 15 21L17 17C13 16 10 17 8 20L6 23L5 20L3 18H6Z" fill="#fff"/>
+  <circle cx="23" cy="13.5" r=".8" fill="#3a2d6b"/>
+  <path d="M11 25H25" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+</svg>

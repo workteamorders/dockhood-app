@@ -9,6 +9,7 @@ import { Latex } from '@/components/xp/Latex';
 import { VerificationBadge } from '@/components/verification/VerificationBadge';
 import { RigorBadge } from '@/components/xp/RigorBadge';
 import { ApiError, fetchTokens, type TokenItem, type TokenQuery } from '@/lib/api';
+import { displayTicker } from '@/lib/hoodToken';
 import { openApp, openToken } from '@/lib/openApp';
 import type { WindowState } from '@/store/windows';
 import { PHASE_LABEL, formatPercent, formatQuote } from './format';
@@ -62,7 +63,7 @@ export function Explore({ win }: { win: WindowState }) {
         <div role="tablist" className={styles.tabs}>
           {(
             [
-              ['hood', `hood.exe launches (${hoodCount})`],
+              ['hood', `Dockhood launches (${hoodCount})`],
               ['all', 'All Pons'],
             ] as const
           ).map(([id, label]) => (
@@ -104,12 +105,12 @@ export function Explore({ win }: { win: WindowState }) {
           <p className={styles.empty}>{q.error instanceof ApiError ? q.error.message : 'Could not load coins.'}</p>
         ) : items.length === 0 && search ? (
           <div className={styles.empty}>
-            <p>No coins match “{search}”{effectiveTab === 'hood' ? ' among hood.exe launches' : ''}.</p>
+            <p>No coins match “{search}”{effectiveTab === 'hood' ? ' among Dockhood launches' : ''}.</p>
             {effectiveTab === 'hood' && <Button onClick={() => setTab('all')}>Search All Pons</Button>}
           </div>
         ) : items.length === 0 ? (
           <div className={styles.empty}>
-            <p>{effectiveTab === 'hood' ? 'No hood.exe launches yet.' : 'No coins indexed yet.'}</p>
+            <p>{effectiveTab === 'hood' ? 'No Dockhood launches yet.' : 'No coins indexed yet.'}</p>
             <Button variant="primary" onClick={() => openApp('launch')}>
               ▶ Launch a Coin
             </Button>
@@ -136,7 +137,8 @@ export function Explore({ win }: { win: WindowState }) {
 }
 
 function TokenCard({ token: t, showVolume }: { token: TokenItem; showVolume: boolean }) {
-  const open = () => openToken(t.token, t.symbol);
+  const symbol = displayTicker(t.token, t.symbol);
+  const open = () => openToken(t.token, symbol);
   return (
     <li>
       <div
@@ -149,12 +151,12 @@ function TokenCard({ token: t, showVolume }: { token: TokenItem; showVolume: boo
           e.preventDefault();
           open();
         }}
-        aria-label={`$${t.symbol} ${t.name}`}
+        aria-label={`$${symbol} ${t.name}`}
       >
         <div className={styles.cardHead}>
-          <TokenLogo logo={t.logo} symbol={t.symbol} />
+          <TokenLogo logo={t.logo} symbol={symbol} />
           <div className={styles.names}>
-            <b>${t.symbol || '?'}</b>
+            <b>${symbol || '?'}</b>
             <span>{t.name}</span>
           </div>
           {t.hood && <RigorBadge score={t.rigorScore} />}
@@ -165,7 +167,7 @@ function TokenCard({ token: t, showVolume }: { token: TokenItem; showVolume: boo
           <span>{showVolume ? `24h ${formatQuote(t.volume24h, t.pair.symbol)}` : `MC ${formatQuote(t.marketCap, t.pair.symbol)}`}</span>
           <span>{t.phase === 0 ? formatPercent(t.progress) : PHASE_LABEL[t.phase]}</span>
         </div>
-        <ProgressBar value={(t.progress ?? 0) * 100} label={`Graduation progress for $${t.symbol}`} />
+        <ProgressBar value={(t.progress ?? 0) * 100} label={`Graduation progress for $${symbol}`} />
       </div>
     </li>
   );

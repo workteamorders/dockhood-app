@@ -15,3 +15,6 @@ pnpm --filter @hood/contracts test
 ```
 
 Deploy to the local fork (`pnpm fork` in packages/shared): see `script/Deploy.s.sol`.
+
+For isolated Robinhood testnet (46630) wallet setup, verified Pons artifact preparation and opt-in journaled deployment,
+see [TESTNET.md](TESTNET.md). This does not change the local-only defaults of `Deploy.s.sol`.

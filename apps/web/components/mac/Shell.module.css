@@ -1,0 +1,55 @@
+.menuBar { position: absolute; top: 0; left: 0; right: 0; height: var(--menubar-h); z-index: 8200; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 18px; background: rgba(255,255,255,.52); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); border-bottom: 1px solid rgba(255,255,255,.18); color: #29202b; font-size: 11px; }
+.menuLeft, .menuRight { display: flex; align-items: center; gap: 18px; min-width: 0; height: 100%; }
+.menuRight { gap: 14px; }
+.menu { position: relative; }
+.menu summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; white-space: nowrap; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary strong { font-weight: 700; }
+.dropdown { position: absolute; top: calc(100% + 7px); left: -8px; width: max-content; min-width: 210px; max-width: 300px; padding: 6px; border: 1px solid var(--glass-border); border-radius: 9px; background: rgba(252,249,253,.97); box-shadow: 0 12px 36px #28142a30; backdrop-filter: blur(32px) saturate(180%); }
+.dropdown button, .dropdown > span { display: block; width: 100%; padding: 7px 10px; background: none; border: 0; border-radius: 5px; text-align: left; font-size: 12px; }
+.dropdown button:hover, .dropdown button:focus-visible { background: var(--accent-action); color: white; }
+.dropdown hr { border: 0; border-top: 1px solid var(--line); margin: 5px; }
+.activeApp { font-weight: 600; }
+.help { border: 0; background: none; padding: 0; font: inherit; }
+.wallet { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #0000000a; border-radius: 20px; padding: 2px 9px; background: #ffffff60; white-space: nowrap; font-size: 10px; font-weight: 600; }
+.walletDot, .connected { width: 5px; height: 5px; border-radius: 50%; background: #7e747d; }
+.connected { background: #208344; }
+.testnet { flex-shrink: 0; padding: 2px 7px; border: 1px solid #b8792140; border-radius: 20px; background: #fff2cfb0; color: #714710; font-size: 10px; font-weight: 700; }
+.date, .clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.clock { min-width: 53px; }
+.dock { position: absolute; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 8100; height: 76px; display: flex; align-items: center; gap: 10px; padding: 8px 12px 12px; border-radius: 21px; border: 1px solid rgba(255,255,255,.42); background: rgba(255,255,255,.38); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); box-shadow: 0 8px 35px #1e14322e, inset 0 1px 0 #ffffff60; max-width: calc(100% - 24px); }
+.dockItem { position: relative; display: flex; flex: 0 0 56px; width: 56px; height: 56px; border: 0; padding: 0; background: none; transform-origin: center bottom; transition: transform .18s ease; text-decoration: none; }
+.dockItem svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px #24172a30); }
+.dockItem:hover, .dockItem:focus-visible { transform: translateY(-7px) scale(1.4); z-index: 2; }
+.dockItem:has(+ .dockItem:hover), .dockItem:hover + .dockItem { transform: translateY(-3px) scale(1.15); }
+.tooltip { position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 240px; border: 1px solid #ffffff80; border-radius: 6px; padding: 4px 9px; background: #f9f6f7e8; color: #342c38; box-shadow: 0 3px 12px #0002; font-size: 10px; font-weight: 500; pointer-events: none; opacity: 0; }
+.dockItem:hover .tooltip, .dockItem:focus-visible .tooltip { opacity: 1; }
+.running { position: absolute; width: 4px; height: 4px; background: #39303e; border-radius: 50%; bottom: -6px; left: calc(50% - 2px); }
+.unread { position: absolute; width: 10px; height: 10px; background: #ff5f57; border: 2px solid #fff; border-radius: 50%; top: 0; right: 0; }
+.dockSeparator { height: 44px; width: 1px; flex: 0 0 1px; background: #ffffff50; box-shadow: 1px 0 #0000000a; margin: 0 2px; }
+.launchpad { position: absolute; inset: var(--menubar-h) 0 var(--taskbar-h); z-index: 8000; background: rgba(63,39,78,.55); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 20px; text-align: center; animation: appear .2s ease; }
+@keyframes appear { from { opacity: 0; } }
+.launchpadClose { position: absolute; top: 24px; right: 28px; border: 1px solid #ffffff40; border-radius: 20px; padding: 6px 16px; color: white; background: #ffffff15; font-size: 12px; }
+.eyebrow { font-size: 10px; letter-spacing: .2em; font-weight: 600; opacity: .7; }
+.launchpad h1 { font-size: 38px; letter-spacing: -.04em; margin: 8px 0; }
+.launchpad p { opacity: .8; margin: 0; }
+.gameGrid { display: flex; gap: 60px; margin: 50px 0; }
+.gameGrid button { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 170px; border: 0; background: none; color: white; padding: 12px; border-radius: 15px; }
+.gameGrid button:hover { background: #ffffff15; }
+.gameGrid button span { font-size: 11px; opacity: .7; }
+.gameGrid button svg { filter: drop-shadow(0 8px 18px #0003); }
+.launchpad small { opacity: .55; font-size: 11px; }
+@media (max-width: 1100px) { .displayMenu, .date, .dynamicItem { display: none; } .menuLeft, .menuRight { gap: 12px; } }
+@media (max-width: 760px) { .ticker, .contract, .activeApp, .help { display: none; } .menuBar { padding: env(safe-area-inset-top, 0px) 12px 0; } }
+@media (max-width: 640px) {
+  .menuBar[data-testnet] .windowMenu, .menuBar[data-testnet] .clock { display: none; }
+  .menuBar { font-size: 11px; }
+  .dock { bottom: max(8px, env(safe-area-inset-bottom, 0px)); gap: 5px; padding: 7px 8px 11px; height: 62px; border-radius: 18px; }
+  .dockItem { width: clamp(32px, 10vw, 44px); height: clamp(32px, 10vw, 44px); flex-basis: clamp(32px, 10vw, 44px); }
+  .dockItem:hover, .dockItem:focus-visible, .dockItem:has(+ .dockItem:hover), .dockItem:hover + .dockItem { transform: none; }
+  .dynamicItem { display: none; }
+  .dockSeparator { height: 30px; margin: 0; }
+  .gameGrid { gap: 10px; }
+  .gameGrid button { width: 145px; }
+  .launchpad { padding: 70px 10px 24px; overflow-y: auto; }
+}

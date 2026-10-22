@@ -40,9 +40,10 @@ if (task === 'ensure-types') {
   if (existsSync(join(here, '.envio', 'types.d.ts'))) process.exit(0);
   process.exit(run(commands.codegen));
 } else if (task === 'test') {
+  const testnet = run(['node', '--test', 'scripts/render-testnet.test.mjs']);
   const main = run(['npx', 'vitest', 'run', 'src/handlers']);
   const verification = run(['npx', 'vitest', 'run', 'src/verification'], 'config.verification.yaml');
-  process.exit(main || verification);
+  process.exit(testnet || main || verification);
 } else if (task in commands) {
   process.exit(run(commands[task]));
 } else {

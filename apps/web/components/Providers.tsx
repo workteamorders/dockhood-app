@@ -10,7 +10,7 @@ import { wagmiConfig } from '@/lib/wagmi';
 import { xpRainbowTheme } from '@/lib/rainbowTheme';
 
 const Disclaimer: DisclaimerComponent = ({ Text }) => (
-  <Text>hood.exe is non-custodial software. Your keys never leave your wallet.</Text>
+  <Text>Dockhood is non-custodial software. Your keys never leave your wallet.</Text>
 );
 
 /** Starts analytics and records fresh wallet connections (which wallet app, never the address). */
@@ -33,7 +33,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <RainbowKitProvider
           theme={xpRainbowTheme}
           modalSize="compact"
-          appInfo={{ appName: 'hood.exe', disclaimer: Disclaimer }}
+          appInfo={{ appName: 'Dockhood', disclaimer: Disclaimer }}
         >
           {children}
         </RainbowKitProvider>

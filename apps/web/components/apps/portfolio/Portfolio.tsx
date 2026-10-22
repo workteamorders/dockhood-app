@@ -10,6 +10,7 @@ import { VerificationBadge } from '@/components/verification/VerificationBadge';
 import { RigorBadge } from '@/components/xp/RigorBadge';
 import { ApiError, fetchPortfolio, type Holding, type TokenItem } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
+import { displayTicker } from '@/lib/hoodToken';
 import { openApp, openToken } from '@/lib/openApp';
 import type { WindowState } from '@/store/windows';
 import { PHASE_LABEL, formatPercent, formatQuote, timeAgo } from '../explore/format';
@@ -160,11 +161,11 @@ function HoldingsTab({ holdings, wallet, tradeHistory }: { holdings: Holding[]; 
           </thead>
           <tbody>
             {rows.map((h) => (
-              <tr key={h.token} tabIndex={0} onClick={() => openToken(h.token, h.symbol)} onKeyDown={(e) => e.key === 'Enter' && openToken(h.token, h.symbol)} title={h.name}>
+              <tr key={h.token} tabIndex={0} onClick={() => openToken(h.token, displayTicker(h.token, h.symbol))} onKeyDown={(e) => e.key === 'Enter' && openToken(h.token, displayTicker(h.token, h.symbol))} title={h.name}>
                 <td>
                   <span className={styles.coin}>
-                    <TokenLogo logo={h.logo} symbol={h.symbol} size={18} />
-                    <b>${h.symbol}</b>
+                    <TokenLogo logo={h.logo} symbol={displayTicker(h.token, h.symbol)} size={18} />
+                    <b>${displayTicker(h.token, h.symbol)}</b>
                     {h.hood && <RigorBadge score={h.rigorScore} />}
                     {h.formal && <VerificationBadge small />}
                     {h.launchedByMe && <span className={styles.tag}>yours</span>}
@@ -217,11 +218,11 @@ function LaunchesTab({ launches }: { launches: TokenItem[] }) {
       </thead>
       <tbody>
         {launches.map((t) => (
-          <tr key={t.token} tabIndex={0} onClick={() => openToken(t.token, t.symbol)} onKeyDown={(e) => e.key === 'Enter' && openToken(t.token, t.symbol)} title={t.name}>
+          <tr key={t.token} tabIndex={0} onClick={() => openToken(t.token, displayTicker(t.token, t.symbol))} onKeyDown={(e) => e.key === 'Enter' && openToken(t.token, displayTicker(t.token, t.symbol))} title={t.name}>
             <td>
               <span className={styles.coin}>
-                <TokenLogo logo={t.logo} symbol={t.symbol} size={18} />
-                <b>${t.symbol}</b>
+                <TokenLogo logo={t.logo} symbol={displayTicker(t.token, t.symbol)} size={18} />
+                <b>${displayTicker(t.token, t.symbol)}</b>
                 {t.hood && <RigorBadge score={t.rigorScore} />}
                 {t.formal && <VerificationBadge small />}
               </span>

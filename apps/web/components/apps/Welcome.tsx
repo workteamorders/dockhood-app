@@ -3,49 +3,54 @@
 import { Button } from '@/components/xp/Button';
 import { OfficialContract } from '@/components/xp/ContractAddress';
 import { HoodLogo, InfoIcon } from '@/components/xp/Icons';
-import { Wordmark } from '@/components/xp/Wordmark';
 import { openApp } from '@/lib/openApp';
 import styles from './apps.module.css';
 
 export function Welcome() {
   return (
-    <div className={`${styles.pane} ${styles.white}`}>
+    <div className={`${styles.pane} ${styles.welcome}`}>
       <div className={styles.hero}>
-        <HoodLogo size={48} />
-        <Wordmark size={40} />
+        <span className={styles.brandMark}><HoodLogo size={36} /></span>
+        <div>
+          <div className={styles.wordmark}>Dockhood</div>
+          <div className={styles.eyebrow}>The Mathematical Superintelligence launchpad.</div>
+        </div>
       </div>
-      <h2 className={styles.display}>Mathematical Superintelligence. On-chain.</h2>
+      <h1 className={styles.display}>The launchpad that boots clean.</h1>
       <p className={styles.lead}>
-        Launch coins backed by theorems. Trade on provable rigor. Powered by Robinhood Chain, routed through Pons.
+        Theorem-backed coins. Formally verified. Fully on-chain.
       </p>
+      <p className={styles.context}>Launch on Robinhood Chain. Route through Pons. Keep control of your wallet.</p>
 
       <div className={styles.ctaRow}>
         <Button variant="primary" large onClick={() => openApp('launch')}>
-          ▶ Launch a Coin
+          Launch a Coin
         </Button>
         <Button large onClick={() => openApp('explore')}>
           Explore
         </Button>
         <Button large onClick={() => openApp('callouts')}>
-          📣 Callouts
+          Callouts
         </Button>
         <Button large onClick={() => openApp('about')}>
           About
         </Button>
       </div>
 
-      <OfficialContract />
+      <div className={styles.contractSection}>
+        <OfficialContract />
+      </div>
 
       <div className={styles.tip}>
         <InfoIcon size={16} />
         <p>
-          <b>Tip:</b> double-click a desktop icon to open it, drag windows by their title bar, and click a taskbar
-          button to minimize or restore a window. Every program is also in the <b>start</b> menu.
+          <b>Your desktop. Your Dock.</b> Open an app from the Dock or double-click a desktop icon.
+          Drag a title bar to arrange your windows. Return to a running app from the Dock.
         </p>
       </div>
 
       <p className={styles.fineprint}>
-        hood.exe is non-custodial: trades go straight from your wallet to Pons.
+        Dockhood is non-custodial. Trades go straight from your wallet to Pons.
       </p>
     </div>
   );

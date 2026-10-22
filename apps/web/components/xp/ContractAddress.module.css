@@ -1,53 +1,64 @@
-/* hood.exe's official contract address: the Welcome box, the tray button and About's row. */
 .box {
-  margin: 0 0 14px;
-  padding: 8px 10px;
-  border: 1px solid #7f9db9;
-  background: #f4f8fe;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
 }
-.label { margin-bottom: 5px; color: #0a246a; font-size: 11px; }
-.row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.label { margin-bottom: 8px; color: var(--text-secondary); font-size: 12px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .address {
   flex: 1 1 200px;
   min-width: 0;
-  padding: 3px 5px;
+  padding: 9px 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 11px;
-  background: #fff;
-  border: 1px solid #7f9db9;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   user-select: all;
 }
-.link { font-size: 11px; }
+.link { color: var(--accent-action); font-size: 12px; text-underline-offset: 3px; }
 .mono { font-family: var(--font-mono); }
 
 .trayWrap { position: relative; display: flex; }
 .trayBtn {
-  padding: 0 4px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 3px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
-  font: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 14px;
-  letter-spacing: 0.5px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: var(--glass-light);
+  font: 600 11px/1.4 var(--font-ui);
+  cursor: pointer;
 }
-.trayBtn:hover { background: rgba(255, 255, 255, 0.28); }
-/* An XP tooltip above the tray */
+.trayBtn:hover { background: var(--surface); }
+.trayBtn:focus-visible, .link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .bubble {
   position: absolute;
-  right: -4px;
+  right: 0;
   bottom: calc(100% + 10px);
-  padding: 3px 6px;
-  border: 1px solid #000;
-  background: #ffffe1;
-  color: #000;
-  font-size: 11px;
+  z-index: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--glass-light);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  color: var(--text-primary);
+  font: 500 12px/1.5 var(--font-ui);
   white-space: nowrap;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .trayBtn { min-width: 44px; min-height: 44px; }
+  .link { display: inline-flex; align-items: center; min-height: 44px; }
 }

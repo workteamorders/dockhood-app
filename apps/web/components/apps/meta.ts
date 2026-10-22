@@ -15,7 +15,7 @@ import {
   VerificationIcon,
   WarningIcon,
   type IconProps,
-} from '@/components/xp/Icons';
+} from '@/components/mac/AppIcon';
 
 export type AppId = 'welcome' | 'launch' | 'explore' | 'callouts' | 'portfolio' | 'theorem' | 'about' | 'recycle' | 'token' | 'terms' | 'risk' | 'privacy' | 'games' | 'solitaire' | 'minesweeper' | 'verification' | 'verificationAdmin';
 
@@ -36,36 +36,36 @@ export type AppMeta = {
 export const APPS: Record<AppId, AppMeta> = {
   welcome: {
     id: 'welcome',
-    title: 'Welcome to hood.exe',
+    title: 'Welcome to Dockhood',
     label: 'Start Here',
     description: 'Tour of the desktop',
     Icon: HelpIcon,
-    w: 580,
-    h: 460,
+    w: 660,
+    h: 600,
   },
   launch: {
     id: 'launch',
-    title: 'Launch.exe — New Token Wizard',
-    label: 'Launch.exe',
+    title: 'Launch',
+    label: 'Launch',
     description: 'Launch a coin on Pons',
     Icon: LaunchIcon,
-    w: 500,
-    h: 580,
+    w: 580,
+    h: 680,
     maximizable: false,
   },
   explore: {
     id: 'explore',
-    title: 'Explore.exe',
-    label: 'Explore.exe',
+    title: 'Explore',
+    label: 'Explore',
     description: 'Browse coins by rigor and market cap',
     Icon: ExploreIcon,
-    w: 580,
-    h: 440,
+    w: 760,
+    h: 560,
   },
   callouts: {
     id: 'callouts',
-    title: 'Callouts.exe — Live',
-    label: 'Callouts.exe',
+    title: 'Callouts',
+    label: 'Callouts',
     description: 'Live market calls from holders',
     Icon: CalloutsIcon,
     w: 560,
@@ -78,26 +78,26 @@ export const APPS: Record<AppId, AppMeta> = {
     description: 'Your launches and holdings',
     Icon: PortfolioIcon,
     w: 540,
-    h: 360,
+    h: 480,
   },
   theorem: {
     id: 'theorem',
-    title: 'Theorem Board.dlg',
+    title: 'Theorem Board',
     label: 'Theorem Board',
     description: 'How theorem launches work',
     Icon: TheoremIcon,
-    w: 440,
-    h: 340,
+    w: 540,
+    h: 480,
     maximizable: false,
   },
   about: {
     id: 'about',
-    title: 'About hood.exe',
+    title: 'About Dockhood',
     label: 'About',
     description: 'Version and system info',
     Icon: InfoIcon,
-    w: 400,
-    h: 400,
+    w: 500,
+    h: 540,
     maximizable: false,
   },
   token: {
@@ -106,14 +106,14 @@ export const APPS: Record<AppId, AppMeta> = {
     label: 'Token',
     description: 'One coin: curve, theorem, links',
     Icon: TheoremIcon,
-    w: 720,
-    h: 540,
+    w: 880,
+    h: 650,
   },
   terms: {
     id: 'terms',
     title: 'Terms of Use',
     label: 'Terms of Use',
-    description: 'The rules for using hood.exe',
+    description: 'The rules for using Dockhood',
     Icon: InfoIcon,
     w: 500,
     h: 460,
@@ -131,7 +131,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: 'privacy',
     title: 'Privacy notice',
     label: 'Privacy notice',
-    description: 'What hood.exe stores about you',
+    description: 'What Dockhood stores about you',
     Icon: LockIcon,
     w: 500,
     h: 460,
@@ -167,12 +167,12 @@ export const APPS: Record<AppId, AppMeta> = {
   },
   verification: {
     id: 'verification',
-    title: 'Verification Queue.exe',
+    title: 'Verification Queue',
     label: 'Verification',
     description: 'Lean proofs: FORMAL ✓ and rewards',
     Icon: VerificationIcon,
-    w: 600,
-    h: 480,
+    w: 760,
+    h: 560,
   },
   verificationAdmin: {
     id: 'verificationAdmin',
@@ -185,8 +185,8 @@ export const APPS: Record<AppId, AppMeta> = {
   },
   recycle: {
     id: 'recycle',
-    title: 'Recycle Bin',
-    label: 'Recycle Bin',
+    title: 'Trash',
+    label: 'Trash',
     description: 'Deleted items',
     Icon: RecycleBinIcon,
     w: 460,
@@ -195,7 +195,7 @@ export const APPS: Record<AppId, AppMeta> = {
 };
 
 /** Desktop icon order (docs/BRIEF.md §4.1). */
-export const DESKTOP_APPS: AppId[] = ['welcome', 'launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification', 'games', 'about', 'recycle'];
+export const DESKTOP_APPS: AppId[] = ['launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification', 'games'];
 
 /** The Games folder and the Start menu's Games submenu (hood-exe-games-brief.md §1.3–1.4). */
 export const GAME_APPS: AppId[] = ['solitaire', 'minesweeper'];

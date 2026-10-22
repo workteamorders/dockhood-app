@@ -1,6 +1,6 @@
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { ROBINHOOD_CHAIN_ID } from '@hood/shared';
+import type { NetworkConfig } from '@hood/shared';
 import type { Activity, LaunchSource, RawLaunch } from './tokenIndex';
 
 /**
@@ -73,7 +73,8 @@ type Lane = 'background' | 'interactive';
  * `limits` caps queries per minute per lane, so a visitor's chart never queues behind a backfill. Unset lanes
  * are unlimited.
  */
-export function envioClient(graphqlUrl: string, pageSize = 1_000, limits: Partial<Record<Lane, number>> = {}) {
+export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize = 1_000, limits: Partial<Record<Lane, number>> = {}) {
+  const expectedChainId = network.chainId;
   const lane = (n: number | undefined) => (n != null && Number.isFinite(n) ? minuteLimiter(n) : async () => {});
   const slots: Record<Lane, () => Promise<void>> = { background: lane(limits.background), interactive: lane(limits.interactive) };
 
@@ -119,8 +120,9 @@ export function envioClient(graphqlUrl: string, pageSize = 1_000, limits: Partia
         {},
         z.object({ chain_metadata: z.array(z.object({ chain_id: z.number(), latest_processed_block: z.number().nullable() })) }),
       );
-      const chain = data.chain_metadata.find((c) => c.chain_id === ROBINHOOD_CHAIN_ID);
-      if (chain?.latest_processed_block == null) throw new Error('Envio has not indexed Robinhood Chain yet');
+      const chain = data.chain_metadata.find((c) => c.chain_id === expectedChainId);
+      if (!chain || data.chain_metadata.some((c) => c.chain_id !== expectedChainId)) throw new Error(`Envio chain mismatch: expected only chain ${expectedChainId}`);
+      if (chain.latest_processed_block == null) throw new Error(`Envio has not indexed Robinhood Chain ${expectedChainId} yet`);
       return chain.latest_processed_block;
     },
 

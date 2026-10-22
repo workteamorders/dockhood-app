@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { and, asc, count, desc, eq, or, sql, type SQL } from 'drizzle-orm';
 import { formatUnits, isAddress } from 'viem';
 import { z } from 'zod';
-import { PONS_TOTAL_SUPPLY, findPair } from '@hood/shared';
+import { PONS_TOTAL_SUPPLY, type NetworkConfig } from '@hood/shared';
 import { HttpError } from '../app';
 import { schema, type Db } from '../db';
 import type { EnvioCandle } from '../services/envio';
@@ -14,22 +14,7 @@ const query = z.object({
   sort: z.enum(['latest', 'volume', 'mcap', 'rigor']).default('latest'),
   limit: z.coerce.number().int().min(1).max(60).default(36),
   offset: z.coerce.number().int().min(0).max(5_000).default(0),
-  /** Ticker (prefix, `import type { FastifyInstance } from 'fastify';
-import { and, asc, count, desc, eq, or, sql, type SQL } from 'drizzle-orm';
-import { formatUnits, isAddress } from 'viem';
-import { z } from 'zod';
-import { PONS_TOTAL_SUPPLY, findPair } from '@hood/shared';
-import { HttpError } from '../app';
-import { schema, type Db } from '../db';
-import type { EnvioCandle } from '../services/envio';
-
-const CACHE_MS = 10_000;
-
-const query = z.object({
-  tab: z.enum(['all', 'hood']).default('all'),
-  sort: z.enum(['latest', 'volume', 'mcap', 'rigor']).default('latest'),
-  limit: z.coerce.number().int().min(1).max(60).default(36),
- optional), name (substring) or contract address (exact). */
+  /** Ticker (prefix, optional $), name (substring) or contract address (exact). */
   q: z.string().trim().max(64).optional(),
 });
 
@@ -67,8 +52,8 @@ const units = (raw: bigint | string | null, decimals: number) => (raw == null ? 
  * Display numbers in pair-asset units. Prices are floats on purpose: they are only shown, never used to
  * build a transaction (trades quote from live reserves with packages/shared/quote.ts).
  */
-export function toItem(row: TokenRow) {
-  const pair = findPair(row.pairToken);
+export function toItem(row: TokenRow, network: NetworkConfig) {
+  const pair = network.findPair(row.pairToken);
   const decimals = pair?.decimals ?? 18;
   const onCurve = row.phase === 0 && row.quoteReserve != null && row.tokenReserve != null && BigInt(row.tokenReserve) > 0n;
   const price = onCurve ? units(row.quoteReserve, decimals)! / units(row.tokenReserve, 18)! : null;
@@ -140,7 +125,7 @@ async function findToken(db: Db, address: string): Promise<TokenRow> {
 
 /** GET /tokens (Explore), GET /tokens/:address (+ /candles, /trades) (docs/BRIEF.md §9). */
 export async function tokenRoutes(app: FastifyInstance) {
-  const { db, envio } = app.deps;
+  const { db, envio, env: { network } } = app.deps;
   const cache = new Map<string, { at: number; body: unknown }>();
   const cached = async <T>(key: string, ttl: number, load: () => Promise<T>): Promise<T> => {
     const now = Date.now();
@@ -195,14 +180,14 @@ export async function tokenRoutes(app: FastifyInstance) {
         db.select({ total: count() }).from(schema.tokens).where(where),
         db.select({ hoodCount: count() }).from(schema.tokens).where(eq(schema.tokens.hood, true)),
       ]);
-      return { items: rows.map(toItem), total, hoodCount, offset: q.offset, volume: envio != null };
+      return { items: rows.map((row) => toItem(row, network)), total, hoodCount, offset: q.offset, volume: envio != null };
     });
   });
 
   app.get<{ Params: { address: string } }>('/tokens/:address', async (req) =>
     cached(`token:${req.params.address.toLowerCase()}`, CACHE_MS, async () => {
       const row = await findToken(db, req.params.address);
-      return { ...toItem(row), deployer: row.deployer, description: row.description, metadataCid: row.metadataCid };
+      return { ...toItem(row, network), deployer: row.deployer, description: row.description, metadataCid: row.metadataCid };
     }),
   );
 
@@ -211,7 +196,7 @@ export async function tokenRoutes(app: FastifyInstance) {
     return fromIndexer(() => cached(`candles:${req.params.address.toLowerCase()}:${q.interval}:${q.limit}`, CACHE_MS, async () => {
       const source = needEnvio();
       const row = await findToken(db, req.params.address);
-      const decimals = findPair(row.pairToken)?.decimals ?? 18;
+      const decimals = network.findPair(row.pairToken)?.decimals ?? 18;
       const seconds = CHART_INTERVALS[q.interval];
       const raw =
         seconds === 900
@@ -238,7 +223,7 @@ export async function tokenRoutes(app: FastifyInstance) {
     return fromIndexer(() => cached(`trades:${req.params.address.toLowerCase()}:${q.limit}`, 10_000, async () => {
       const source = needEnvio();
       const row = await findToken(db, req.params.address);
-      const decimals = findPair(row.pairToken)?.decimals ?? 18;
+      const decimals = network.findPair(row.pairToken)?.decimals ?? 18;
       const trades = await source.trades(row.tokenAddress, q.limit);
       return {
         trades: trades.map((t) => ({

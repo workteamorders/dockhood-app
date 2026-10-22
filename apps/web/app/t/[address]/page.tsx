@@ -4,6 +4,7 @@ import { connection } from 'next/server';
 import { Startup } from '@/components/Startup';
 import { getShareToken, plainStatement, shareSummary } from '@/lib/shareToken';
 import { X_HANDLE } from '@/lib/social';
+import { displayTicker } from '@/lib/hoodToken';
 
 /**
  * /t/0x… (docs/BRIEF.md §4): the desktop with that coin's Token Detail open, and a link preview with the
@@ -12,14 +13,14 @@ import { X_HANDLE } from '@/lib/social';
 export async function generateMetadata({ params }: { params: Promise<{ address: string }> }): Promise<Metadata> {
   const { address } = await params;
   const t = await getShareToken(address);
-  if (!t) return { title: 'hood.exe' };
-  const title = `$${t.symbol} — ${t.name} | hood.exe`;
-  const lead = t.hood && t.statement ? plainStatement(t.statement) : (t.blurb ?? 'A coin on Robinhood Chain, routed through Pons.');
+  if (!t) return { title: 'Dockhood' };
+  const title = `$${displayTicker(address, t.symbol)} — ${t.name} | Dockhood`;
+  const lead = t.hood && t.statement ? plainStatement(t.statement) : (t.blurb ?? 'A coin on Robinhood Chain. Routed through Pons.');
   const description = [lead, shareSummary(t)].filter(Boolean).join(' — ');
   return {
     title,
     description,
-    openGraph: { title, description, type: 'website', siteName: 'hood.exe' },
+    openGraph: { title, description, type: 'website', siteName: 'Dockhood' },
     twitter: { card: 'summary_large_image', title, description, site: `@${X_HANDLE}` },
   };
 }

@@ -9,7 +9,7 @@ import {
   type Hash,
   type Hex,
 } from 'viem';
-import { PONS_V2, PUBLIC_RPC_MAINNET, ponsFactoryAbi, ponsTokenAbi, robinhoodChain } from '@hood/shared';
+import { ponsFactoryAbi, ponsTokenAbi, type NetworkConfig } from '@hood/shared';
 
 export type LaunchOnChain = {
   token: Address;
@@ -25,7 +25,7 @@ export interface ChainReader {
   verifySignature(address: Address, message: string, signature: Hex): Promise<boolean>;
   /** The Pons V2 launch in a mined transaction; 'pending' before it is mined, null when it isn't a launch. */
   launchFromTx(hash: Hash): Promise<LaunchOnChain | 'pending' | null>;
-  /** Native ETH balance on 4663 (posting callouts needs a non-zero one, docs/BRIEF.md §10). */
+  /** Native ETH balance on the configured chain (posting callouts needs a non-zero one). */
   balance(address: Address): Promise<bigint>;
   /** ERC-20 balances of `owner` for each token; failed reads are left out. */
   tokenBalances(owner: Address, tokens: Address[]): Promise<Map<Address, bigint>>;
@@ -35,8 +35,8 @@ export interface ChainReader {
 
 export type LaunchRecord = { curve: Address; deployer: Address; pairToken: Address; graduationThreshold: bigint; launchedAt: Date | null };
 
-export function rpcChainReader(rpcUrl: string = PUBLIC_RPC_MAINNET): ChainReader {
-  const client = createPublicClient({ chain: robinhoodChain(rpcUrl), transport: http(rpcUrl, { retryCount: 3 }) });
+export function rpcChainReader(network: NetworkConfig): ChainReader {
+  const client = createPublicClient({ chain: network.chain, transport: http(network.rpcUrl, { retryCount: 3 }) });
   return {
     verifySignature: (address, message, signature) => client.verifyMessage({ address, message, signature }),
     balance: (address) => client.getBalance({ address }),
@@ -59,7 +59,7 @@ export function rpcChainReader(rpcUrl: string = PUBLIC_RPC_MAINNET): ChainReader
       const results = await client.multicall({
         allowFailure: true,
         batchSize: 16_384,
-        contracts: tokens.map((t) => ({ address: PONS_V2.launchFactory, abi: ponsFactoryAbi, functionName: 'getLaunchedToken', args: [t] }) as const),
+        contracts: tokens.map((t) => ({ address: network.pons.launchFactory, abi: ponsFactoryAbi, functionName: 'getLaunchedToken', args: [t] }) as const),
       });
       const out = new Map<Address, LaunchRecord>();
       tokens.forEach((t, i) => {
@@ -81,7 +81,7 @@ export function rpcChainReader(rpcUrl: string = PUBLIC_RPC_MAINNET): ChainReader
         throw e;
       }
       if (receipt.status !== 'success') return null;
-      const factoryLogs = receipt.logs.filter((l) => isAddressEqual(l.address, PONS_V2.launchFactory));
+      const factoryLogs = receipt.logs.filter((l) => isAddressEqual(l.address, network.pons.launchFactory));
       const [launched] = parseEventLogs({ abi: ponsFactoryAbi, eventName: 'TokenLaunched', logs: factoryLogs });
       if (!launched) return null;
       const { token, curve, deployer, pairToken } = launched.args;

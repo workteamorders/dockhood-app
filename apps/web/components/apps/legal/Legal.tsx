@@ -45,7 +45,7 @@ function Doc({ title, children, win }: { title: string; children: ReactNode; win
         {LEGAL_DRAFT && <p className={styles.draft}>Draft pending legal review. The final text may differ.</p>}
         {children}
         <p className={styles.contact}>
-          Questions: {CONTACT ?? 'contact details will be published here before launch.'} hood.exe is not affiliated with Pons.
+          Questions: {CONTACT ?? 'contact details will be published here before launch.'} Dockhood is not affiliated with Pons.
         </p>
       </div>
       <div className={shared.footerRow}>
@@ -65,23 +65,23 @@ export function Terms({ win }: { win: WindowState }) {
   return (
     <Doc title="Terms of Use" win={win}>
       <p>
-        These terms cover your use of hood.exe (the website and its API); &quot;we&quot; means the team that runs it. By using hood.exe you agree to them. If you
+        These terms cover your use of Dockhood (the website and its API); &quot;we&quot; means the team that runs it. By using Dockhood you agree to them. If you
         don&apos;t agree, don&apos;t use it.
       </p>
-      <h2>1. What hood.exe is</h2>
+      <h2>1. What Dockhood is</h2>
       <p>
-        hood.exe is a non-custodial interface to the Pons V2 launchpad on Robinhood Chain. We never hold your funds or keys. Every launch and trade is a
+        Dockhood is a non-custodial interface to the Pons V2 launchpad on Robinhood Chain. We never hold your funds or keys. Every launch and trade is a
         transaction you sign in your own wallet and is carried out by smart contracts that we did not write and do not control.
       </p>
       <h2>2. Who may use it</h2>
       <p>
-        You must be of legal age where you live and allowed to use services like this there. You may not use hood.exe if you are subject to sanctions or
+        You must be of legal age where you live and allowed to use services like this there. You may not use Dockhood if you are subject to sanctions or
         live in a place where doing so is unlawful. You are responsible for following your local laws and for any taxes.
       </p>
       <h2>3. Launching a coin</h2>
       <p>
         You are responsible for everything you publish: name, ticker, logo, theorem, description and links. That content is stored on IPFS and on-chain,
-        so it is public and permanent. We can hide it from hood.exe but cannot delete it from the chain. Don&apos;t publish anything unlawful, infringing,
+        so it is public and permanent. We can hide it from Dockhood but cannot delete it from the chain. Don&apos;t publish anything unlawful, infringing,
         hateful, sexual, deceptive or that impersonates someone else.
       </p>
       <h2>4. Rigor scores</h2>
@@ -93,22 +93,22 @@ export function Terms({ win }: { win: WindowState }) {
       </p>
       <h2>6. Fees</h2>
       <p>
-        Pons charges a launch fee, trade fees, creator taxes and, early on, snipe taxes. They are shown before you sign. hood.exe currently adds no fee of
+        Pons charges a launch fee, trade fees, creator taxes and, early on, snipe taxes. They are shown before you sign. Dockhood currently adds no fee of
         its own; if that changes, these terms will say so first.
       </p>
       <h2>7. No advice, no endorsement</h2>
       <p>
-        Nothing on hood.exe is financial, investment, legal or tax advice. Listing a coin is not an endorsement of it or of its creator. Read the{' '}
+        Nothing on Dockhood is financial, investment, legal or tax advice. Listing a coin is not an endorsement of it or of its creator. Read the{' '}
         <Link to="risk">Risk disclosure</Link>.
       </p>
       <h2>8. No warranty, limited liability</h2>
       <p>
-        hood.exe is provided &quot;as is&quot;, without warranties of any kind. It may be unavailable, slow or wrong, including prices, balances and P&amp;L.
-        To the extent the law allows, we are not liable for losses from your use of hood.exe, from smart contracts, wallets, networks or other third
+        Dockhood is provided &quot;as is&quot;, without warranties of any kind. It may be unavailable, slow or wrong, including prices, balances and P&amp;L.
+        To the extent the law allows, we are not liable for losses from your use of Dockhood, from smart contracts, wallets, networks or other third
         parties, or from coins you buy, sell or launch.
       </p>
       <h2>9. Changes</h2>
-      <p>We may change hood.exe or these terms, or stop offering hood.exe, at any time. The date above shows the latest version.</p>
+      <p>We may change Dockhood or these terms, or stop offering Dockhood, at any time. The date above shows the latest version.</p>
       <p>
         See also the <Link to="privacy">Privacy notice</Link>.
       </p>
@@ -142,10 +142,10 @@ export function Risk({ win }: { win: WindowState }) {
         </li>
         <li>
           <b>Your wallet is your responsibility.</b> Lost keys can&apos;t be recovered, and transactions signed by a compromised wallet can&apos;t be
-          reversed. hood.exe will never ask for your seed phrase.
+          reversed. Dockhood will never ask for your seed phrase.
         </li>
         <li>
-          <b>Networks and services fail.</b> Robinhood Chain, RPC providers, the indexer or hood.exe itself can be down or behind. What hood.exe shows
+          <b>Networks and services fail.</b> Robinhood Chain, RPC providers, the indexer or Dockhood itself can be down or behind. What Dockhood shows
           may be out of date.
         </li>
         <li>
@@ -160,7 +160,7 @@ export function Risk({ win }: { win: WindowState }) {
 export function Privacy({ win }: { win: WindowState }) {
   return (
     <Doc title="Privacy notice" win={win}>
-      <p>This notice explains what hood.exe handles about you and why. We don&apos;t sell personal data.</p>
+      <p>This notice explains what Dockhood handles about you and why. We don&apos;t sell personal data.</p>
       <h2>Public by design</h2>
       <p>
         Your wallet address, launches, trades and balances are public on Robinhood Chain. Launch metadata (logo, theorem, description) is public on IPFS.
@@ -199,8 +199,8 @@ export function Privacy({ win }: { win: WindowState }) {
       </p>
       <h2>Your choices</h2>
       <p>
-        You can browse without connecting a wallet. You can sign out at any time (Start → Log Off). To have your nickname or callouts removed from
-        hood.exe, contact us; on-chain and IPFS data can&apos;t be removed. See also the <Link to="terms">Terms of Use</Link>.
+        You can browse without connecting a wallet. You can sign out at any time using the wallet controls. To have your nickname or callouts removed from
+        Dockhood, contact us; on-chain and IPFS data can&apos;t be removed. See also the <Link to="terms">Terms of Use</Link>.
       </p>
     </Doc>
   );

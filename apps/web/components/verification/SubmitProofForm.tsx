@@ -11,6 +11,7 @@ import { Latex } from '@/components/xp/Latex';
 import { track } from '@/lib/analytics';
 import { confirmProofSubmission, fetchToken, fetchTokens, prepareProof, type PreparedProof, type VerificationConfig } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
+import { displayTicker } from '@/lib/hoodToken';
 import { ensureSession } from '@/lib/siwe';
 import { chain, wagmiConfig } from '@/lib/wagmi';
 import styles from './verification.module.css';
@@ -37,7 +38,7 @@ function CoinPicker({ onPick }: { onPick: (c: Coin) => void }) {
         {(list.data?.items ?? []).map((t) => (
           <li key={t.token}>
             <button type="button" disabled={t.formal} onClick={() => onPick({ token: t.token, symbol: t.symbol, statement: t.statement, formal: t.formal })}>
-              <b>${t.symbol}</b> {t.name} {t.formal ? '· already FORMAL ✓' : ''}
+              <b>${displayTicker(t.token, t.symbol)}</b> {t.name} {t.formal ? '· already FORMAL ✓' : ''}
             </button>
           </li>
         ))}
@@ -143,7 +144,7 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
         ) : (
           <div className={styles.field}>
             <span className={styles.label}>
-              Coin: <b>${coin.symbol}</b>{' '}
+              Coin: <b>${displayTicker(coin.token, coin.symbol)}</b>{' '}
               {!token && (
                 <button type="button" className={styles.linkBtn} onClick={() => setPicked(null)}>
                   change

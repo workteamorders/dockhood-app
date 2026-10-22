@@ -159,7 +159,7 @@ describe('envioLaunchSource', () => {
     const f = fakeSource();
     for (const n of [2, 3, 4]) f.launch(n, 600 + n); // metadata for the tokens Envio will report
     const requests = stubEnvio([row(2, 602), row(3, 603), row(4, 604), row(5, 1_200)], 1_000);
-    const source = envioLaunchSource(envioClient('http://envio.test/v1/graphql', 2), f.source);
+    const source = envioLaunchSource(envioClient('http://envio.test/v1/graphql', ctx.app.deps.env.network, 2), f.source);
 
     expect(await source.latestBlock()).toBe(1_000);
     const launches = await source.launches(600, 1_000);
@@ -174,9 +174,9 @@ describe('envioLaunchSource', () => {
 
   it('surfaces GraphQL errors and a chain Envio has not reached', async () => {
     vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ errors: [{ message: 'field "Token" not found' }] })));
-    await expect(envioLaunchSource(envioClient('http://envio.test'), fakeSource().source).launches(0, 1)).rejects.toThrow(/field "Token" not found/);
+    await expect(envioLaunchSource(envioClient('http://envio.test', ctx.app.deps.env.network), fakeSource().source).launches(0, 1)).rejects.toThrow(/field "Token" not found/);
     vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ data: { chain_metadata: [{ chain_id: 4663, latest_processed_block: null }] } })));
-    await expect(envioLaunchSource(envioClient('http://envio.test'), fakeSource().source).latestBlock()).rejects.toThrow(/not indexed/);
+    await expect(envioLaunchSource(envioClient('http://envio.test', ctx.app.deps.env.network), fakeSource().source).latestBlock()).rejects.toThrow(/not indexed/);
   });
 });
 

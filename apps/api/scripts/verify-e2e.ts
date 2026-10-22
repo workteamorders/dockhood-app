@@ -20,13 +20,19 @@ const POOL = process.env.VERIFICATION_POOL_ADDRESS as `0x${string}`;
 const REGISTRY = process.env.RIGOR_REGISTRY_ADDRESS as `0x${string}`;
 const DATABASE_URL = process.env.DATABASE_URL!;
 if (!POOL || !REGISTRY || !DATABASE_URL) throw new Error('Set VERIFICATION_POOL_ADDRESS, RIGOR_REGISTRY_ADDRESS and DATABASE_URL.');
-if (!/127\.0\.0\.1|localhost/.test(RPC)) throw new Error('Refusing to run against a non-local RPC.');
+for (const [name, value] of [['RPC', RPC], ['API', API]]) {
+  const url = new URL(value);
+  if (!['http:', 'https:'].includes(url.protocol) || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.username || url.password) {
+    throw new Error(`Refusing to run against a non-local ${name}.`);
+  }
+}
 
 // anvil's default accounts 0 (admin/owner) and 3 (the submitter)
 const admin = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
 const user = privateKeyToAccount('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a');
 const chain = defineChain({ id: 4663, name: 'anvil', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [RPC] } } });
 const pub = createPublicClient({ chain, transport: http(RPC) });
+if (await pub.getChainId() !== chain.id) throw new Error(`Local Anvil must use chain ID ${chain.id}.`);
 const wallet = (account: typeof user) => createWalletClient({ account, chain, transport: http(RPC) });
 
 // A fresh coin and proof every run, so it can be repeated against the same database.

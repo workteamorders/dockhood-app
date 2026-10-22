@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { desc, inArray, sql } from 'drizzle-orm';
 import { formatUnits, getAddress, isAddress, type Address } from 'viem';
-import { findPair, parseDescription } from '@hood/shared';
+import { parseDescription } from '@hood/shared';
 import { HttpError } from '../app';
 import { schema } from '../db';
 import type { WalletPosition } from '../services/envio';
@@ -16,7 +16,7 @@ const units = (raw: bigint | null, decimals: number) => (raw == null ? null : Nu
 
 /** GET /portfolio/:wallet (docs/BRIEF.md §5.7, §9): the wallet's launches and holdings with unrealized P&L. */
 export async function portfolioRoutes(app: FastifyInstance) {
-  const { db, chain, envio, market } = app.deps;
+  const { db, chain, envio, market, env: { network } } = app.deps;
   const cache = new Map<string, { at: number; body: unknown }>();
 
   app.get<{ Params: { wallet: string } }>('/portfolio/:wallet', async (req) => {
@@ -75,7 +75,7 @@ export async function portfolioRoutes(app: FastifyInstance) {
 
     const holdings = await Promise.all(
       coins.map(async ({ token, row, curve, pairToken }) => {
-        const pair = findPair(pairToken);
+        const pair = network.findPair(pairToken);
         const decimals = pair?.decimals ?? 18;
         const balance = balances.get(token)!;
         const state = states.get(token);
@@ -117,7 +117,7 @@ export async function portfolioRoutes(app: FastifyInstance) {
     const body = {
       wallet,
       holdings,
-      launches: launched.map(toItem),
+      launches: launched.map((row) => toItem(row, network)),
       /** False without the indexer: holdings then only cover the wallet's own launches, with no cost basis. */
       tradeHistory,
     };

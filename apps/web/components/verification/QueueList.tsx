@@ -1,6 +1,7 @@
 'use client';
 
 import type { VerificationRow } from '@/lib/api';
+import { displayTicker } from '@/lib/hoodToken';
 import { statusText } from './format';
 import styles from './verification.module.css';
 
@@ -12,7 +13,7 @@ export function QueueList({ rows, empty, onOpen }: { rows: VerificationRow[]; em
       {rows.map((r) => (
         <li key={r.id} className={styles.row} role="button" tabIndex={0} onClick={() => onOpen(r.id)} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.id)}>
           <span>
-            <span className={styles.ticker}>${r.ticker ?? '?'}</span> <span className={styles.coinName}>{r.name}</span>
+            <span className={styles.ticker}>${displayTicker(r.token, r.ticker) ?? '?'}</span> <span className={styles.coinName}>{r.name}</span>
           </span>
           <span className={`${styles.status} ${styles[r.status]}`}>{statusText(r)}</span>
           <span className={styles.meta}>

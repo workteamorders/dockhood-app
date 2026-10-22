@@ -1,11 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { formatEther } from 'viem';
-import { HEXE_TOKEN, NATIVE_PAIR } from '@hood/shared';
+import { NATIVE_PAIR, type NetworkConfig } from '@hood/shared';
 import { schema, type Db } from './db';
 import type { EnvioClient } from './services/envio';
 import { CALLOUTS_CHANNEL, type PubSub } from './services/pubsub';
 
-/** $HEXE trades (either side) at or above this many ETH raise a trade balloon on every open desktop. */
+/** Official-token trades (either side) at or above this many ETH raise a trade balloon on every open desktop. */
 export const HEXE_MIN_ETH = 10_000_000_000_000_000n;
 /** The same for hood.exe's theorem coins. Other Pons coins never do. */
 export const HOOD_MIN_ETH = 50_000_000_000_000_000n;
@@ -31,22 +31,23 @@ export type ActivityItem = {
 
 type Watched = { tiers: { tokens: string[]; minQuote: bigint }[]; tickers: Map<string, string> };
 
-/** $HEXE and the ETH-paired hood coins, with their thresholds; addresses as the token table (and indexer) store them. */
-export async function watchedTokens(db: Db): Promise<Watched> {
+/** The official token and ETH-paired hood coins, with addresses as the token table (and indexer) store them. */
+export async function watchedTokens(db: Db, network: NetworkConfig): Promise<Watched> {
+  const official = network.officialToken?.address.toLowerCase();
   const rows = await db
     .select({ token: schema.tokens.tokenAddress, symbol: schema.tokens.symbol, hood: schema.tokens.hood })
     .from(schema.tokens)
     .where(
       and(
         eq(sql`lower(${schema.tokens.pairToken})`, NATIVE_PAIR.toLowerCase()),
-        sql`(${schema.tokens.hood} or lower(${schema.tokens.tokenAddress}) = ${HEXE_TOKEN.address.toLowerCase()})`,
+        official ? sql`(${schema.tokens.hood} or lower(${schema.tokens.tokenAddress}) = ${official})` : eq(schema.tokens.hood, true),
       ),
     );
-  const isHexe = (a: string) => a.toLowerCase() === HEXE_TOKEN.address.toLowerCase();
+  const isOfficial = (a: string) => a.toLowerCase() === official;
   return {
     tiers: [
-      { tokens: rows.filter((r) => isHexe(r.token)).map((r) => r.token), minQuote: HEXE_MIN_ETH },
-      { tokens: rows.filter((r) => r.hood && !isHexe(r.token)).map((r) => r.token), minQuote: HOOD_MIN_ETH },
+      { tokens: rows.filter((r) => isOfficial(r.token)).map((r) => r.token), minQuote: HEXE_MIN_ETH },
+      { tokens: rows.filter((r) => r.hood && !isOfficial(r.token)).map((r) => r.token), minQuote: HOOD_MIN_ETH },
     ],
     tickers: new Map(rows.map((r) => [r.token.toLowerCase(), r.symbol])),
   };
@@ -65,11 +66,11 @@ export const toActivity = (t: Trade, tickers: Map<string, string>): ActivityItem
   txHash: t.txHash,
 });
 
-type Deps = { db: Db; pubsub: PubSub; envio: EnvioClient; now: () => Date; log?: (msg: string) => void };
+type Deps = { db: Db; pubsub: PubSub; envio: EnvioClient; network: NetworkConfig; now: () => Date; log?: (msg: string) => void };
 
 /** One pass of the worker: new notable trades since the cursor, pushed live when recent. Returns how many were pushed. */
-export async function activityTick({ db, pubsub, envio, now, log }: Deps): Promise<number> {
-  const { tiers, tickers } = await watchedTokens(db);
+export async function activityTick({ db, pubsub, envio, network, now, log }: Deps): Promise<number> {
+  const { tiers, tickers } = await watchedTokens(db, network);
   if (!tiers.some((t) => t.tokens.length)) return 0;
   const [cursor] = await db.select().from(schema.indexState).where(eq(schema.indexState.key, CURSOR)).limit(1);
   // First run: start at the indexer's head instead of replaying history.

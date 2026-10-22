@@ -10,6 +10,7 @@ import { Button } from '@/components/xp/Button';
 import { Latex } from '@/components/xp/Latex';
 import { fetchVerificationAdmin, fetchVerificationConfig, reviewVerification, setVerificationPaused, type VerificationAdmin as Overview } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
+import { displayTicker } from '@/lib/hoodToken';
 import { ensureSession } from '@/lib/siwe';
 import { chain, wagmiConfig } from '@/lib/wagmi';
 import { duration } from './format';
@@ -84,7 +85,7 @@ function ReviewCard({ item, onDone }: { item: Overview['review'][number]; onDone
   return (
     <div className={styles.reviewCard}>
       <div>
-        <b>${item.ticker ?? '?'}</b> · submitted by {item.submitter.slice(0, 6)}…{item.submitter.slice(-4)} · passed the checker{' '}
+        <b>${displayTicker(item.token, item.ticker) ?? '?'}</b> · submitted by {item.submitter.slice(0, 6)}…{item.submitter.slice(-4)} · passed the checker{' '}
         {item.checkedAt ? new Date(item.checkedAt).toLocaleString() : ''}
       </div>
       <div className={styles.compare}>
@@ -169,7 +170,7 @@ export function VerificationAdmin() {
   if (config.data && !config.data.admin)
     return (
       <div className={styles.empty}>
-        <p>This page is for hood.exe admins. Sign in with an admin wallet.</p>
+        <p>This page is for Dockhood admins. Sign in with an admin wallet.</p>
         <Button onClick={() => void run('signin', async () => (await ensureSession(address as Address), queryClient.invalidateQueries({ queryKey: ['verification-config'] })))}>
           Sign in
         </Button>
@@ -224,5 +225,3 @@ export function VerificationAdmin() {
     </div>
   );
 }
-
-

@@ -1,27 +1,34 @@
 import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { X_HANDLE } from '@/lib/social';
+import '@fontsource-variable/inter';
+import '@fontsource/jetbrains-mono';
 import './globals.css';
 
 // Absolute URLs for link previews: NEXT_PUBLIC_SITE_URL, else the production domain.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.hoodexe.site';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://dockhood.fun';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'hood.exe',
-  description: 'Launch coins backed by theorems. Trade on provable rigor. Powered by Robinhood Chain, routed through Pons.',
-  applicationName: 'hood.exe',
+  title: 'Dockhood — The launchpad that boots clean.',
+  description: 'Dockhood. The Mathematical Superintelligence launchpad. Theorem-backed coins on Robinhood Chain.',
+  applicationName: 'Dockhood',
   openGraph: {
-    title: 'hood.exe — Mathematical Superintelligence. On-chain.',
-    description: 'Launch coins. Prove theorems. Trade intelligently.',
-    siteName: 'hood.exe',
+    title: 'Dockhood',
+    description: 'The Mathematical Superintelligence launchpad.',
+    siteName: 'Dockhood',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'hood.exe', site: `@${X_HANDLE}` },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Dockhood',
+    description: 'The Mathematical Superintelligence launchpad.',
+    site: `@${X_HANDLE}`,
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#245edc',
+  themeColor: '#3a2d6b',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

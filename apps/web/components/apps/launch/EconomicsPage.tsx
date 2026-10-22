@@ -2,7 +2,8 @@
 
 import { erc20Abi, type Address } from 'viem';
 import { useBalance, useReadContract } from 'wagmi';
-import { LAUNCH_PAIRS, NATIVE_PAIR, buyPresets, findPair, formatAmount, formatBps, type PairKind } from '@hood/shared';
+import { NATIVE_PAIR, buyPresets, formatAmount, formatBps, type PairKind } from '@hood/shared';
+import { findPair, launchPairs, network } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
 import { GroupBox } from '@/components/xp/Controls';
 import type { LaunchTerms } from '@/lib/pons/launch';
@@ -28,9 +29,10 @@ const GROUPS: [PairKind, string][] = [
 /** Wallet balance of the pair asset, in its own units. */
 export function usePairBalance(pair: Address, account: Address | undefined) {
   const native = pair === NATIVE_PAIR;
-  const eth = useBalance({ address: account, query: { enabled: !!account && native } });
+  const eth = useBalance({ address: account, chainId: network.chainId, query: { enabled: !!account && native } });
   const erc20 = useReadContract({
     address: pair,
+    chainId: network.chainId,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: account ? [account] : undefined,
@@ -40,7 +42,7 @@ export function usePairBalance(pair: Address, account: Address | undefined) {
 }
 
 export function EconomicsPage({ draft, set, errors, terms, account }: Props) {
-  const pair = findPair(draft.pair) ?? LAUNCH_PAIRS[0];
+  const pair = findPair(draft.pair) ?? launchPairs[0];
   const balance = usePairBalance(draft.pair, account);
   const amount = devBuyAmount(draft, pair.decimals);
   const short = balance != null && amount != null && amount > balance;
@@ -57,7 +59,8 @@ export function EconomicsPage({ draft, set, errors, terms, account }: Props) {
         >
           <select id="launch-pair" value={draft.pair} onChange={(e) => set({ pair: e.target.value as Address, devBuy: '' })}>
             {GROUPS.map(([kind, label]) => {
-              const items = LAUNCH_PAIRS.filter((p) => p.kind === kind);
+              const items = launchPairs.filter((p) => p.kind === kind);
+              if (!items.length) return null;
               return (
                 <optgroup key={kind} label={label}>
                   {items.map((p) => (

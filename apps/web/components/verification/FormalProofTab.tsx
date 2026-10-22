@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { txUrl } from '@hood/shared';
+import { txUrl } from '@/lib/network';
 import { fetchTokenProof } from '@/lib/api';
 import { eth } from './format';
 import { ProofViewer } from './ProofViewer';

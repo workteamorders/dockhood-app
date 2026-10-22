@@ -1,40 +1,40 @@
-/* The tray's $HEXE price: white on the tray's blue, change in light green or red so it reads on blue. */
 .ticker {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  padding: 1px 4px;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 6px;
   border: 0;
-  border-radius: 3px;
-  background: none;
-  color: #fff;
-  font: inherit;
-  font-size: 11px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font: 500 12px/1.5 var(--font-ui);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
-.ticker:hover { background: rgba(255, 255, 255, 0.18); }
-.symbol { font-weight: 700; }
-.price { padding: 0 2px; border-radius: 2px; }
-.up { color: #b6ffa3; }
-.down { color: #ffc2b8; }
+.ticker:hover { background: var(--surface-muted); }
+.ticker:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.symbol { font-weight: 600; }
+.price { padding: 0 2px; border-radius: 4px; }
+.up { color: #18773a; }
+.down { color: #c02c25; }
 
-/* A brief highlight behind the price as it ticks */
 .flashUp { animation: flashUp 1.2s ease-out; }
 .flashDown { animation: flashDown 1.2s ease-out; }
 @keyframes flashUp {
-  from { background: rgba(110, 227, 93, 0.75); }
+  from { background: rgba(48, 209, 88, 0.2); }
   to { background: transparent; }
 }
 @keyframes flashDown {
-  from { background: rgba(255, 92, 70, 0.75); }
+  from { background: rgba(255, 69, 58, 0.18); }
   to { background: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
   .flashUp, .flashDown { animation: none; }
 }
 
-/* Phones: the taskbar is narrow; keep the ticker and the change, drop the price */
 @media (max-width: 640px) {
+  .ticker { min-height: 44px; align-items: center; }
   .price { display: none; }
 }

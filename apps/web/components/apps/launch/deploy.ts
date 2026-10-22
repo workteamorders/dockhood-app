@@ -13,6 +13,7 @@ import {
   type TheoremMetadata,
 } from '@hood/shared';
 import { pinLaunch, recordLaunch } from '@/lib/api';
+import { network } from '@/lib/network';
 import { ensureSession } from '@/lib/siwe';
 import { LAUNCH_CONFIG_ID, type LaunchTerms } from '@/lib/pons/launch';
 import { chain, wagmiConfig } from '@/lib/wagmi';
@@ -104,7 +105,7 @@ export async function deployLaunch(draft: Draft, terms: LaunchTerms, onStep: (st
     quoteIn,
     minTokensOut: quote ? withSlippage(quote.tokensOut, DEV_BUY_SLIPPAGE_BPS) : 0n,
     recipient: account,
-  });
+  }, network.pons);
 
   if (plan.approval) {
     const { token, spender, amount } = plan.approval;

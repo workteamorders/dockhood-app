@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveNetwork, type NetworkConfig } from '@hood/shared';
 
 const list = (fallback: string) =>
   z
@@ -25,6 +26,11 @@ const envSchema = z
     DATABASE_URL: z.string().min(1),
     REDIS_URL: optional,
     RPC_URL_SERVER: optional,
+    CHAIN_ID: z.coerce.number().int().refine((id) => id === 4663 || id === 46630, 'must be 4663 or 46630').default(4663),
+    PONS_LAUNCH_FACTORY: optional,
+    PONS_LAUNCH_AND_BUY: optional,
+    PAIR_TOKENS_JSON: optional,
+    OFFICIAL_TOKEN_ADDRESS: optional,
     DEEPSEEK_API_KEY: optional,
     DEEPSEEK_BASE_URL: z.string().default('https://api.deepseek.com'),
     DEEPSEEK_MODEL: z.string().default('deepseek-v4-flash'),
@@ -89,7 +95,7 @@ const envSchema = z
     }
   });
 
-export type Env = z.output<typeof envSchema>;
+export type Env = z.output<typeof envSchema> & { network: NetworkConfig };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   // `KEY=` in a .env file (or a blank Railway variable) means unset, so defaults and checks apply.
@@ -100,5 +106,20 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     const lines = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`);
     throw new Error(`Invalid environment:\n${lines.join('\n')}`);
   }
-  return parsed.data;
+  const env = parsed.data;
+  try {
+    const pairs = env.PAIR_TOKENS_JSON === undefined ? undefined : JSON.parse(env.PAIR_TOKENS_JSON);
+    if (pairs !== undefined && !Array.isArray(pairs)) throw new Error('PAIR_TOKENS_JSON must be a JSON array');
+    const network = resolveNetwork({
+      chainId: env.CHAIN_ID,
+      rpcUrl: env.RPC_URL_SERVER,
+      launchFactory: env.PONS_LAUNCH_FACTORY,
+      launchAndBuy: env.PONS_LAUNCH_AND_BUY,
+      pairs,
+      officialToken: env.OFFICIAL_TOKEN_ADDRESS,
+    });
+    return { ...env, network };
+  } catch (error) {
+    throw new Error(`Invalid environment network configuration (CHAIN_ID, PONS_LAUNCH_FACTORY, PONS_LAUNCH_AND_BUY, PAIR_TOKENS_JSON, OFFICIAL_TOKEN_ADDRESS): ${error instanceof Error ? error.message : String(error)}`);
+  }
 }

@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { erc20Abi, parseEventLogs, parseUnits, type Address, type Hash } from 'viem';
 import { getAccount, simulateContract, switchChain, waitForTransactionReceipt, writeContract } from 'wagmi/actions';
-import { addressUrl, buyPresets, findPair, formatAmount, formatBps, ponsCurveAbi, quoteBuy, quoteSell, withSlippage } from '@hood/shared';
+import { buyPresets, formatAmount, formatBps, ponsCurveAbi, quoteBuy, quoteSell, withSlippage } from '@hood/shared';
+import { addressUrl, findPair } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
 import { ConnectWallet } from '@/components/xp/ConnectWallet';
 import { InfoIcon, WarningIcon } from '@/components/xp/Icons';
 import { TxLink } from '@/components/xp/TxLink';
 import { failureReason, track } from '@/lib/analytics';
 import type { TokenDetail } from '@/lib/api';
+import { displayTicker } from '@/lib/hoodToken';
 import { useIdentity } from '@/lib/identity';
 import { useLiveCurve, useTradeBalances } from '@/lib/pons/curve';
 import { txErrorMessage } from '@/lib/pons/launch';
@@ -54,6 +56,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
   const pair = findPair(pairAddress);
   const live = useLiveCurve(curveAddress, account, !paused && t.phase === 0);
   const balances = useTradeBalances(tokenAddress, pairAddress, curveAddress, account);
+  const symbol = displayTicker(t.token, t.symbol);
 
   if (t.phase > 0 || live.data?.graduated) {
     return (
@@ -62,12 +65,12 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
           <InfoIcon size={16} />
           <p>
             {t.phase >= 2
-              ? `$${t.symbol} has graduated and trades on Uniswap V4. Swapping it inside hood.exe arrives in Phase 2.`
-              : `$${t.symbol} has finished its curve; its Uniswap V4 pool is being seeded. Curve trading is closed.`}
+              ? `$${symbol} has graduated and trades on Uniswap V4. Swapping it inside Dockhood arrives in Phase 2.`
+              : `$${symbol} has finished its curve; its Uniswap V4 pool is being seeded. Curve trading is closed.`}
           </p>
         </div>
         <a href={addressUrl(t.token)} target="_blank" rel="noopener noreferrer">
-          ${t.symbol} on Blockscout
+          ${symbol} on Blockscout
         </a>
         <Footer />
       </div>
@@ -75,7 +78,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
   }
 
   const decimals = side === 'buy' ? t.pair.decimals : 18;
-  const unit = side === 'buy' ? t.pair.symbol : `$${t.symbol}`;
+  const unit = side === 'buy' ? t.pair.symbol : `$${symbol}`;
   const amountIn = parseAmount(amount, decimals);
   const slippagePct = Number(slippage);
   const slippageOk = Number.isFinite(slippagePct) && slippagePct >= SLIPPAGE.min && slippagePct <= SLIPPAGE.max;
@@ -93,7 +96,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
   const busy = status.kind === 'busy';
 
   let blocked: string | null = null;
-  if (live.data?.readyToGraduate) blocked = `$${t.symbol} is graduating to Uniswap V4; trading on the curve has closed.`;
+  if (live.data?.readyToGraduate) blocked = `$${symbol} is graduating to Uniswap V4; trading on the curve has closed.`;
   else if (snipe > 0n) blocked = `Snipe tax is ${formatBps(snipe)} right after launch. Trading opens in a few seconds.`;
 
   const execute = async () => {
@@ -143,7 +146,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
       const logs = receipt.logs.filter((l) => l.address.toLowerCase() === curveAddress.toLowerCase());
       const text =
         side === 'buy'
-          ? `Bought ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveBuy', logs })[0]?.args.tokensOut ?? 0n, 18, { compact: true })} $${t.symbol}.`
+          ? `Bought ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveBuy', logs })[0]?.args.tokensOut ?? 0n, 18, { compact: true })} $${symbol}.`
           : `Sold for ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveSell', logs })[0]?.args.quoteOut ?? 0n, t.pair.decimals)} ${t.pair.symbol}.`;
       setStatus({ kind: 'done', text, hash });
       track('trade_confirmed', props);
@@ -158,7 +161,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
     }
   };
 
-  const verb = side === 'buy' ? `Buy $${t.symbol}` : `Sell $${t.symbol}`;
+  const verb = side === 'buy' ? `Buy $${symbol}` : `Sell $${symbol}`;
   const action = amountIn && insufficient ? `Not enough ${unit}` : amountIn && needsApproval ? `Approve ${unit}, then ${side}` : verb;
 
   return (
@@ -232,14 +235,14 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
           <div>
             <dt>You receive</dt>
             <dd>
-              ≈ {buyQuote ? `${formatAmount(buyQuote.tokensOut, 18, { compact: true })} $${t.symbol}` : `${formatAmount(sellQuote!.quoteOut, t.pair.decimals)} ${t.pair.symbol}`}
+              ≈ {buyQuote ? `${formatAmount(buyQuote.tokensOut, 18, { compact: true })} $${symbol}` : `${formatAmount(sellQuote!.quoteOut, t.pair.decimals)} ${t.pair.symbol}`}
             </dd>
           </div>
           <div>
             <dt>Minimum</dt>
             <dd>
               {buyQuote
-                ? `${formatAmount(withSlippage(buyQuote.tokensOut, slippageBps), 18, { compact: true })} $${t.symbol}`
+                ? `${formatAmount(withSlippage(buyQuote.tokensOut, slippageBps), 18, { compact: true })} $${symbol}`
                 : `${formatAmount(withSlippage(sellQuote!.quoteOut, slippageBps), t.pair.decimals)} ${t.pair.symbol}`}
             </dd>
           </div>

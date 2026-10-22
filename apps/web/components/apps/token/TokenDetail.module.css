@@ -1,80 +1,50 @@
-/* Token Detail (docs/BRIEF.md §5.4): main column + 240 px buy/sell panel; one column on mobile. */
-.layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 240px; }
-.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 8px; gap: 8px; overflow: auto; }
-.side { min-height: 0; overflow: auto; border-left: 1px solid #d6d2c2; background: #f6f5ef; }
-
-.header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 260px; background: var(--surface); color: var(--text-primary); font: 13px/1.5 var(--font-ui); backdrop-filter: blur(32px) saturate(180%); }
+.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow: auto; }
+.side { min-height: 0; overflow: auto; border-left: 1px solid var(--line); background: var(--surface-muted); }
+.header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .titles { flex: 1 1 200px; min-width: 0; }
-.titles b { font-size: 13px; }
-.name { color: #555; }
-.snippet { font-family: var(--font-display); font-style: italic; font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.titles b { font-size: 18px; font-weight: 600; }
+.name { color: var(--text-secondary); }
+.snippet { font-family: var(--font-ui); font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .snippet :global(.katex-display) { display: inline; margin: 0; }
-.plain { font-family: var(--font-ui); font-style: normal; color: #555; }
-
-.stats { display: flex; gap: 12px; margin: 0; }
-.stats div { display: flex; flex-direction: column; }
-.stats dt { color: #6a6a6a; font-size: 10px; }
+.plain { font-family: var(--font-ui); font-style: normal; color: var(--text-secondary); }
+.stats { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; }
+.stats div { display: flex; flex-direction: column; gap: 3px; }
+.stats dt { color: var(--text-secondary); font-size: 12px; }
 .stats dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-.chartBox { border: 1px solid var(--field-border); background: #fff; padding: 4px 6px 6px; }
-.chartBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; color: #4b4b4b; }
-.intervals { display: flex; gap: 1px; }
-.interval, .intervalOn {
-  font: inherit;
-  font-size: 10px;
-  padding: 1px 6px;
-  border: 1px solid #c6c3b6;
-  background: linear-gradient(to bottom, #fff, #ece9d8);
-  color: #000;
-}
-.intervalOn { background: #fff; border-color: var(--selection); color: var(--selection); font-weight: 700; }
+.chartBox { border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .85); padding: 12px; }
+.chartBar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--text-secondary); }
+.intervals { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 7px; background: var(--surface-muted); }
+.interval, .intervalOn { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.intervalOn { background: #fff; border-color: var(--line); color: var(--accent-action); font-weight: 600; }
 .chart { height: 180px; display: grid; }
 .chart > p { place-self: center; }
-.curveLabel { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0 3px; flex-wrap: wrap; }
-
-.tabs { flex: 1 1 auto; min-height: 140px; display: flex; flex-direction: column; }
+.curveLabel { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; font-size: 12px; }
+.tabs { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; }
 .tabs > div { flex: 1 1 auto; min-height: 0; }
-
 .trades { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.trades th { text-align: left; font-weight: 400; color: #4b4b4b; padding: 2px 4px; position: sticky; top: calc(-1 * var(--panel-pad, 0px)); background: #fcfcfe; box-shadow: inset 0 -1px 0 #d6d2c2; }
-.trades td { padding: 2px 4px; white-space: nowrap; }
-.trades tbody tr:hover { background: #eef3fc; }
-.buy { color: var(--good); font-weight: 700; }
-.sell { color: var(--bad); font-weight: 700; }
-
-.note { display: flex; gap: 8px; align-items: flex-start; }
+.trades th { text-align: left; font-weight: 500; color: var(--text-secondary); font-size: 12px; padding: 8px; position: sticky; top: calc(-1 * var(--panel-pad, 0px)); background: #f5f5f7; border-bottom: 1px solid var(--line); }
+.trades td { padding: 8px; white-space: nowrap; border-bottom: 1px solid var(--line); }
+.trades tbody tr:hover { background: rgba(10, 132, 255, .06); }
+.buy { color: var(--good); font-weight: 600; }
+.sell { color: var(--bad); font-weight: 600; }
+.note { display: flex; gap: 10px; align-items: flex-start; }
 .note p { margin: 0; }
-.theorem { padding: 8px 10px; border: 1px solid var(--field-border); background: #fff; font-size: 13px; overflow-wrap: anywhere; }
+.theorem { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; overflow-wrap: anywhere; }
 .description { white-space: pre-wrap; overflow-wrap: anywhere; }
-.muted { color: #6a6a6a; }
+.muted { color: var(--text-secondary); }
 .mono { font-family: var(--font-mono); }
-
-.panel { padding: 10px; }
-
+.panel { padding: 16px; }
+.share { display: flex; flex-wrap: wrap; gap: 6px; }
+.shareBtn { font: inherit; font-size: 12px; color: var(--text-primary); text-decoration: none; padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255, 255, 255, .7); cursor: pointer; white-space: nowrap; }
+.shareBtn:hover { background: rgba(10, 132, 255, .06); }
+.layout button:focus-visible, .shareBtn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 @media (max-width: 640px) {
-  /* One scrolling column: each part keeps its natural height instead of sharing the window's. */
   .layout { grid-template-columns: 1fr; grid-auto-rows: auto; align-content: start; overflow: auto; }
-  .main { overflow: visible; min-height: auto; }
+  .main { overflow: visible; min-height: auto; padding: 12px; }
   .tabs { min-height: 280px; }
-  .side { overflow: visible; min-height: auto; border-left: 0; border-top: 1px solid #d6d2c2; }
-  .interval, .intervalOn { padding: 4px 9px; font-size: 11px; }
-  .stats { width: 100%; justify-content: space-between; }
-}
-
-.share { display: flex; gap: 4px; }
-.shareBtn {
-  font: inherit;
-  font-size: 11px;
-  color: #000;
-  text-decoration: none;
-  padding: 2px 8px;
-  border: 1px solid #003c74;
-  border-radius: 3px;
-  background: linear-gradient(to bottom, #fff, #ece9d8 86%, #d6d0c5);
-  cursor: var(--cursor-hand);
-  white-space: nowrap;
-}
-.shareBtn:hover { box-shadow: inset 0 0 0 1px #f9c94c; }
-@media (max-width: 640px) {
+  .side { overflow: visible; min-height: auto; border-left: 0; border-top: 1px solid var(--line); }
+  .interval, .intervalOn { padding: 6px 9px; }
+  .stats { width: 100%; justify-content: space-between; gap: 12px; }
   .shareBtn { padding: 8px 12px; font-size: 13px; }
 }

@@ -9,6 +9,7 @@ import { Dialog } from '@/components/xp/Dialog';
 import { ApiError, fetchCallouts, fetchSession, postCallout, reactToCallout, setNickname, type Callout, type CalloutPage, type ReactionKind } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useIdentity } from '@/lib/identity';
+import { displayTicker } from '@/lib/hoodToken';
 import { onLive, startLive } from '@/lib/live';
 import { ensureSession } from '@/lib/siwe';
 import { txErrorMessage } from '@/lib/pons/launch';
@@ -108,7 +109,7 @@ export function CalloutFeed({ token, ticker, onLiveCounts }: { token?: string; t
         {q.isPending && <li className={styles.empty}>Loading callouts…</li>}
         {q.isError && <li className={styles.empty}>{errorText(q.error)}</li>}
         {!q.isPending && !q.isError && items.length === 0 && (
-          <li className={styles.empty}>{ticker ? `No callouts for $${ticker} yet. Post one →` : 'No callouts yet. Be the first.'}</li>
+          <li className={styles.empty}>{ticker ? `No callouts for $${displayTicker(token, ticker)} yet. Post one →` : 'No callouts yet. Be the first.'}</li>
         )}
         {items.map((c) => (
           <CalloutItem key={c.id} callout={c} flash={flash.has(c.id)} onReact={(k) => void react(c, k)} />
@@ -174,7 +175,7 @@ function Compose({ token, ticker, onPosted, onError }: { token?: string; ticker?
         rows={2}
         value={text}
         maxLength={MAX + 40}
-        placeholder={ticker ? `Your call on $${ticker}…` : 'Your call… mention a $TICKER to link it'}
+        placeholder={ticker ? `Your call on $${displayTicker(token, ticker)}…` : 'Your call… mention a $TICKER to link it'}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && text.trim() && !over && !busy) void submit();

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { txUrl } from '@hood/shared';
+import { txUrl } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
 import { Tabs } from '@/components/xp/Controls';
 import { Dialog, MessageBox } from '@/components/xp/Dialog';
@@ -10,6 +10,7 @@ import { Latex } from '@/components/xp/Latex';
 import { track } from '@/lib/analytics';
 import { fetchVerificationConfig, fetchVerificationQueue, fetchVerificationSubmission, type VerificationRow, type VerificationTab } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
+import { displayTicker } from '@/lib/hoodToken';
 import type { WindowState } from '@/store/windows';
 import { eth, statusText } from './format';
 import { ProofViewer } from './ProofViewer';
@@ -33,7 +34,7 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const q = useQuery({ queryKey: ['verification-submission', id], queryFn: () => fetchVerificationSubmission(id), refetchInterval: REFRESH_MS });
   const d = q.data;
   return (
-    <Dialog title={d ? `$${d.submission.ticker ?? '?'} — proof` : 'Proof'} onClose={onClose} width={620} footer={<Button onClick={onClose}>Close</Button>}>
+    <Dialog title={d ? `$${displayTicker(d.submission.token, d.submission.ticker) ?? '?'} — proof` : 'Proof'} onClose={onClose} width={620} footer={<Button onClick={onClose}>Close</Button>}>
       {!d ? (
         <p className={styles.note}>{q.isError ? "Couldn't load this submission." : 'Loading…'}</p>
       ) : (
@@ -81,8 +82,9 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
 function ResultBox({ row, onClose, onResubmit }: { row: VerificationRow; onClose: () => void; onResubmit: () => void }) {
   const [copied, setCopied] = useState(false);
   const link = typeof window === 'undefined' ? '' : `${window.location.origin}/t/${row.token}`;
+  const ticker = displayTicker(row.token, row.ticker);
   if (row.status === 'verified') {
-    const text = `$${row.ticker} is now formally verified on hood.exe: a Lean proof of its theorem, Σ 100 FORMAL ✓`;
+    const text = `$${ticker} is now formally verified on Dockhood: a Lean proof of its theorem, Σ 100 FORMAL ✓`;
     return (
       <MessageBox
         title="✓ Formal Verification Passed"
@@ -115,7 +117,7 @@ function ResultBox({ row, onClose, onResubmit }: { row: VerificationRow; onClose
         }
       >
         <p>
-          Your coin <b>${row.ticker}</b> is now <b>Σ 100</b> with the FORMAL ✓ badge.
+          Your coin <b>${ticker}</b> is now <b>Σ 100</b> with the FORMAL ✓ badge.
         </p>
         {row.rewardWei && (
           <p>
@@ -148,7 +150,7 @@ function ResultBox({ row, onClose, onResubmit }: { row: VerificationRow; onClose
       }
     >
       <p>
-        Your proof for <b>${row.ticker}</b> {row.status === 'rejected' ? 'was rejected at review' : 'did not pass'}. Its rigor score is unchanged, and the
+        Your proof for <b>${ticker}</b> {row.status === 'rejected' ? 'was rejected at review' : 'did not pass'}. Its rigor score is unchanged, and the
         submission fee is not refunded (it prevents spam).
       </p>
       {row.errorSummary && <pre className={styles.errorLog}>{row.errorSummary}</pre>}

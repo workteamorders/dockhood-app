@@ -15,3 +15,5 @@ pnpm-debug.log*
 /brand
 # Local chain snapshot (pnpm fork)
 .fork/
+# Dedicated testnet wallets, artifacts and deployment journal
+.testnet/

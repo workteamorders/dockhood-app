@@ -1,7 +1,7 @@
 import { isAddressEqual, type Address } from 'viem';
 import { createSiweMessage } from 'viem/siwe';
 import { signMessage } from 'wagmi/actions';
-import { ROBINHOOD_CHAIN_ID } from '@hood/shared';
+import { network } from './network';
 import { currentSession, logout, siweNonce, verifySiwe } from './api';
 import { wagmiConfig } from './wagmi';
 
@@ -18,10 +18,10 @@ export async function ensureSession(address: Address): Promise<void> {
   const message = createSiweMessage({
     domain: window.location.host,
     address,
-    statement: 'Sign in to hood.exe. This does not send a transaction or cost gas.',
+    statement: 'Sign in to Dockhood. This does not send a transaction or cost gas.',
     uri: window.location.origin,
     version: '1',
-    chainId: ROBINHOOD_CHAIN_ID,
+    chainId: network.chainId,
     nonce,
     issuedAt: new Date(),
   });

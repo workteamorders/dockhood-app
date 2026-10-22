@@ -22,12 +22,12 @@ function drawCard(ctx: CanvasRenderingContext2D, card: Card, x: number, y: numbe
   ctx.stroke();
   ctx.fillStyle = isRed(card.suit) ? '#c91f00' : '#000';
   ctx.textBaseline = 'top';
-  ctx.font = `bold ${Math.round(w * 0.22)}px Tahoma, Verdana, sans-serif`;
+  ctx.font = `bold ${Math.round(w * 0.22)}px Inter, system-ui, sans-serif`;
   ctx.fillText(RANK_LABEL[card.rank], x + w * 0.08, y + h * 0.05);
   ctx.fillText(SUIT_SYMBOL[card.suit], x + w * 0.08, y + h * 0.05 + w * 0.24);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `${Math.round(w * 0.5)}px Tahoma, Verdana, sans-serif`;
+  ctx.font = `${Math.round(w * 0.5)}px Inter, system-ui, sans-serif`;
   ctx.fillText(card.rank > 10 ? RANK_LABEL[card.rank] : SUIT_SYMBOL[card.suit], x + w / 2, y + h / 2);
   ctx.textAlign = 'start';
 }

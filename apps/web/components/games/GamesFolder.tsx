@@ -1,14 +1,13 @@
 'use client';
 
 import { useRef } from 'react';
-import { StatusBar } from '@/components/xp/Controls';
 import { APPS, GAME_APPS, type AppId } from '@/components/apps/meta';
 import { openApp } from '@/lib/openApp';
 import styles from './games.module.css';
 
 const DOUBLE_TAP_MS = 400;
 
-/** The Games folder (hood-exe-games-brief.md §1.4): double-click (or double-tap) a game to open it. */
+/** Double-click (or double-tap) a game to open it. */
 export function GamesFolder() {
   const lastTap = useRef<{ id: AppId; t: number } | null>(null);
   const tap = (id: AppId, t: number) => {
@@ -22,6 +21,11 @@ export function GamesFolder() {
 
   return (
     <div className={styles.folder}>
+      <header className={styles.folderHeader}>
+        <span className={styles.folderEyebrow}>Dockhood Arcade</span>
+        <h1>Time for a little downtime.</h1>
+        <p>Two classics. One clean desktop.</p>
+      </header>
       <ul className={styles.folderIcons} aria-label="Games">
         {GAME_APPS.map((id) => {
           const app = APPS[id];
@@ -32,10 +36,10 @@ export function GamesFolder() {
                 className={styles.folderIcon}
                 onClick={(e) => tap(id, e.timeStamp)}
                 onKeyDown={(e) => e.key === 'Enter' && openApp(id)}
-                aria-label={`${app.label} — double-click to open`}
+                aria-label={`${app.label} - double-click to open`}
               >
                 <span className={styles.folderImg}>
-                  <app.Icon size={40} />
+                  <app.Icon size={48} />
                 </span>
                 <span className={styles.folderLabel}>{app.label}</span>
               </button>
@@ -43,7 +47,10 @@ export function GamesFolder() {
           );
         })}
       </ul>
-      <StatusBar cells={[`${GAME_APPS.length} objects`, 'Double-click a game to play']} />
+      <div className={styles.folderFooter}>
+        <span>{GAME_APPS.length} games</span>
+        <span>Double-click or double-tap to play. Press Enter when focused.</span>
+      </div>
     </div>
   );
 }

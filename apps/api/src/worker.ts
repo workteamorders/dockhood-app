@@ -6,6 +6,7 @@ import { redisPubSub } from './services/pubsub';
 import { activityTick } from './activity';
 import { systemCalloutsTick } from './systemCallouts';
 import { pruneIndexer } from './services/indexerPrune';
+import { assertRpcChain } from './services/network';
 
 /**
  * The always-on worker (docs/BRIEF.md §9): every 10 s, system callouts for hood.exe coins and the live trade
@@ -15,11 +16,13 @@ import { pruneIndexer } from './services/indexerPrune';
  */
 const env = loadEnv();
 if (!env.REDIS_URL) throw new Error('The worker needs REDIS_URL to reach the API.');
+await assertRpcChain(env.network);
+const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, env.network, 1_000, { background: 20 }) : undefined;
+if (envio) await envio.latestBlock();
 const { db, close } = await connectPostgres(env.DATABASE_URL);
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2, family: 0 });
 const pubsub = redisPubSub(redis);
 // Its share of Envio's per-minute query limit; the API takes 60 (src/index.ts).
-const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, 1_000, { background: 20 }) : undefined;
 if (!envio) console.warn('No ENVIO_GRAPHQL_URL: big-buy callouts and trade balloons are off; launches and graduations still post.');
 
 const log = (msg: string) => console.log(`[worker] ${new Date().toISOString()} ${msg}`);
@@ -34,7 +37,7 @@ async function tick() {
   }
   // Separate, so a failure in one doesn't hold up the other.
   try {
-    if (envio) await activityTick({ db, pubsub, envio, now: () => new Date(), log });
+    if (envio) await activityTick({ db, pubsub, envio, network: env.network, now: () => new Date(), log });
   } catch (e) {
     log(`activity tick failed: ${e instanceof Error ? e.message.split('\n')[0] : String(e)}`);
   } finally {

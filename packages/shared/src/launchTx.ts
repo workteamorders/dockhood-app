@@ -88,13 +88,16 @@ export type LaunchPlanInput = {
  * - ERC-20 dev buy → router.launchAndBuy, msg.value = launchFee, after approving the router for quoteIn.
  * The creator is snipe-tax exempt either way, so the atomic dev buy fills at the untaxed price.
  */
-export function planLaunch(p: LaunchPlanInput) {
+export function planLaunch(
+  p: LaunchPlanInput,
+  targets: { launchFactory: Address; launchAndBuy: Address } = PONS_V2,
+) {
   if (p.quoteIn === 0n) {
     return {
       kind: 'launchToken',
       approval: null,
       request: {
-        address: PONS_V2.launchFactory,
+        address: targets.launchFactory,
         abi: ponsFactoryAbi,
         functionName: 'launchToken',
         args: [p.params, p.launchConfigId, p.pairToken],
@@ -105,9 +108,9 @@ export function planLaunch(p: LaunchPlanInput) {
   const native = p.pairToken === NATIVE_PAIR;
   return {
     kind: 'launchAndBuy',
-    approval: native ? null : { token: p.pairToken, spender: PONS_V2.launchAndBuy, amount: p.quoteIn },
+    approval: native ? null : { token: p.pairToken, spender: targets.launchAndBuy, amount: p.quoteIn },
     request: {
-      address: PONS_V2.launchAndBuy,
+      address: targets.launchAndBuy,
       abi: ponsRouterAbi,
       functionName: 'launchAndBuy',
       args: [p.params, p.launchConfigId, p.pairToken, p.quoteIn, p.minTokensOut, p.recipient, []],

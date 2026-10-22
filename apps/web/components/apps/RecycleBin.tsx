@@ -7,14 +7,14 @@ import styles from './apps.module.css';
 // Features cut from v1.0 of the brief, kept here as a wink to anyone who remembers them.
 const ITEMS = [
   {
-    name: 'Bonding Curve Selector.exe',
-    from: 'C:\\hood\\launch',
+    name: 'Bonding Curve Selector',
+    from: 'Dockhood / Launch',
     reason: 'Pons V2 uses one curve for every coin',
     Icon: TheoremIcon,
   },
   {
-    name: 'platform_fee_0.0005.sys',
-    from: 'C:\\hood\\fees',
+    name: 'Platform fee 0.0005',
+    from: 'Dockhood / Fees',
     reason: 'No platform fee at launch',
     Icon: WarningIcon,
   },
@@ -47,7 +47,7 @@ export function RecycleBin() {
           </tbody>
         </table>
       </div>
-      <StatusBar cells={[`${ITEMS.length} objects`, 'Recycle Bin']} />
+      <StatusBar cells={[`${ITEMS.length} items`, 'Trash']} />
     </>
   );
 }

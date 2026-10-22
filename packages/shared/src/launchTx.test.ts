@@ -4,6 +4,7 @@ import { PONS_V2, NATIVE_PAIR } from './pons';
 import { buildTokenParams, planLaunch, randomSalt, socialUrl, type TokenParamsInput } from './launchTx';
 import { freshCurveState, quoteBuy } from './quote';
 import { LAUNCH_PAIRS, findPair } from './pairs';
+import { resolveNetwork } from './network';
 
 const creator: Address = '0x00000000000000000000000000000000000c0dE5';
 const USDG: Address = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168';
@@ -80,6 +81,34 @@ describe('planLaunch', () => {
     const plan = planLaunch({ ...base, pairToken: USDG, quoteIn: 10_000_000n });
     expect(plan.request.value).toBe(parseEther('0.0005'));
     expect(plan.approval).toEqual({ token: USDG, spender: PONS_V2.launchAndBuy, amount: 10_000_000n });
+  });
+
+  it('uses the selected factory for a launch without a dev buy', () => {
+    const { pons } = resolveNetwork({
+      chainId: 46630,
+      launchFactory: '0x0000000000000000000000000000000000001001',
+      launchAndBuy: '0x0000000000000000000000000000000000001002',
+    });
+    const plan = planLaunch({ ...base, pairToken: NATIVE_PAIR, quoteIn: 0n }, pons);
+    expect(plan.request.address).toBe(pons.launchFactory);
+    expect(plan.request.value).toBe(base.launchFee);
+    expect(plan.approval).toBeNull();
+  });
+
+  it.each([NATIVE_PAIR, USDG])('uses the selected router and approval spender for dev buy with %s', (pairToken) => {
+    const { pons } = resolveNetwork({
+      chainId: 46630,
+      launchFactory: '0x0000000000000000000000000000000000001001',
+      launchAndBuy: '0x0000000000000000000000000000000000001002',
+    });
+    const quoteIn = 10_000_000n;
+    const plan = planLaunch({ ...base, pairToken, quoteIn }, pons);
+    expect(plan.request.address).toBe(pons.launchAndBuy);
+    expect(plan.request.args[2]).toBe(pairToken);
+    expect(plan.request.value).toBe(pairToken === NATIVE_PAIR ? base.launchFee + quoteIn : base.launchFee);
+    expect(plan.approval).toEqual(pairToken === NATIVE_PAIR ? null : {
+      token: pairToken, spender: pons.launchAndBuy, amount: quoteIn,
+    });
   });
 });
 

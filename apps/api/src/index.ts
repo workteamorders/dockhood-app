@@ -11,8 +11,16 @@ import { memoryPubSub, redisPubSub } from './services/pubsub';
 import { deepseekScorer, offlineScorer } from './services/scorer';
 import { envioClient, envioLaunchSource } from './services/envio';
 import { rpcLaunchSource, tokenIndex } from './services/tokenIndex';
+import { assertRpcChain } from './services/network';
 
 const env = loadEnv();
+const { network } = env;
+await assertRpcChain(network);
+// Unscoped token/trade queries require a single-chain indexer matching this deployment.
+// Envio's 100 queries/minute: 40 for this index, 20 for visitors, 20 for the worker.
+const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, network, 1_000, { background: 40, interactive: 20 }) : undefined;
+if (envio) await envio.latestBlock();
+const rpcSource = rpcLaunchSource(network);
 const { db, close: closeDb } = await connectPostgres(env.DATABASE_URL);
 // family 0: Railway private hostnames may resolve to IPv6 only.
 const redis = env.REDIS_URL ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2, family: 0 }) : null;
@@ -20,29 +28,24 @@ const kv = redis ? redisKv(redis) : memoryKv();
 const pubsub = redis ? redisPubSub(redis) : memoryPubSub();
 const deepseek = env.DEEPSEEK_API_KEY ? { apiKey: env.DEEPSEEK_API_KEY, baseURL: env.DEEPSEEK_BASE_URL, model: env.DEEPSEEK_MODEL, log: (m: string) => console.warn(m) } : null;
 
-// Envio's free plan allows 100 queries a minute in total: 40 for the token index, 20 for visitors' charts,
-// trades and portfolios, 20 for the worker (src/worker.ts).
-const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, 1_000, { background: 40, interactive: 20 }) : undefined;
-
 const app = await buildApp({
   env,
   db,
   envio,
-  market: rpcLaunchSource(env.RPC_URL_SERVER),
+  market: rpcSource,
   kv,
-  chain: rpcChainReader(env.RPC_URL_SERVER),
+  chain: rpcChainReader(network),
   scorer: deepseek ? deepseekScorer(deepseek) : offlineScorer,
   moderator: deepseek ? deepseekModerator(deepseek) : allowAllModerator,
   pubsub,
   pinner: env.PINATA_JWT ? pinataPinner(env.PINATA_JWT) : devPinner(),
   // Formal verification: the pool, when deployed. The API only reads it; the verifier worker (VPS) posts results.
-  pool: env.VERIFICATION_POOL_ADDRESS && env.RPC_URL_SERVER ? rpcPool(env.RPC_URL_SERVER, env.VERIFICATION_POOL_ADDRESS as `0x${string}`) : undefined,
+  pool: env.VERIFICATION_POOL_ADDRESS ? rpcPool(network, env.VERIFICATION_POOL_ADDRESS as `0x${string}`) : undefined,
 });
 
 const standIns = [!env.REDIS_URL && 'in-memory KV', !env.DEEPSEEK_API_KEY && 'offline scorer and allow-all callout moderation', !env.PINATA_JWT && 'dev pinner (nothing published)'].filter(Boolean);
 if (standIns.length) app.log.warn(`Running with stand-ins: ${standIns.join(', ')}`);
 
-const rpcSource = rpcLaunchSource(env.RPC_URL_SERVER);
 const index =
   env.TOKEN_INDEX === 'on'
     ? tokenIndex(db, envio ? envioLaunchSource(envio, rpcSource) : rpcSource, {

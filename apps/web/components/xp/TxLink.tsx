@@ -1,4 +1,5 @@
-import { shortHash, txUrl } from '@hood/shared';
+import { shortHash } from '@hood/shared';
+import { txUrl } from '@/lib/network';
 
 /** A transaction's short hash linking to Blockscout, with the full hash on hover. */
 export function TxLink({ hash, label, className }: { hash: string; label?: string; className?: string }) {

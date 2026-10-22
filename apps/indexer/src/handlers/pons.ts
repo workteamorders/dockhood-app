@@ -36,7 +36,9 @@ indexer.onEvent({ contract: 'PonsV2Factory', event: 'TokenLaunched' }, async ({ 
  * launch first. Those coins' raisedQuote/volume counters start from zero at that point.
  */
 let seeds: Map<string, string[]> | null = null;
-function seededLaunch(curve: string): string[] | undefined {
+function seededLaunch(curve: string, chainId: number): string[] | undefined {
+  // This CSV (including HOOD_LAUNCH_SEED overrides) belongs exclusively to Robinhood mainnet.
+  if (chainId !== 4663) return undefined;
   if (!seeds) {
     seeds = new Map();
     try {
@@ -54,7 +56,7 @@ function seededLaunch(curve: string): string[] | undefined {
 }
 
 function seedCurve(curveAddress: string, context: EvmOnEventContext): { id: string; token: string } | undefined {
-  const f = seededLaunch(curveAddress);
+  const f = seededLaunch(curveAddress, context.chain.id);
   if (!f) return undefined;
   const [token, , deployer, pairToken, launchConfigId, graduationThreshold, launchBlock, launchedAt] = f;
   const curve = { id: curveAddress, token };

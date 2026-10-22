@@ -1,88 +1,53 @@
 .btn {
-  font: inherit;
-  font-size: 11px;
-  color: #000;
+  font: 600 13px/1.4 var(--font-ui);
+  color: var(--text-primary);
   min-width: 75px;
-  min-height: 23px;
-  padding: 0 10px;
-  border: 1px solid var(--btn-border);
-  border-radius: 3px;
-  background: linear-gradient(to bottom, #fff 0%, var(--btn-face-top) 30%, var(--btn-face-mid) 86%, var(--btn-face-bot) 100%);
-  box-shadow: inset -1px -1px 0 rgba(0, 0, 0, 0.12), inset 1px 1px 0 #fff;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   user-select: none;
+  cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s;
 }
 
-/* Hover: the orange inner glow. */
-.btn:hover:not(:disabled) {
-  box-shadow: inset -1px 1px #fff0cf, inset 1px 2px #fdd889, inset -2px 2px #fbc761, inset 2px -2px #e5a01a;
-}
+.btn:hover:not(:disabled) { background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
+.btn:focus-visible { outline: 3px solid var(--accent-primary); outline-offset: 2px; }
+.btn:active:not(:disabled) { background: var(--surface-muted); box-shadow: none; }
 
-.btn:focus-visible {
-  outline: 1px dotted #000;
-  outline-offset: -4px;
-  box-shadow: inset -1px 1px #cee7ff, inset 1px 2px #98b8ea, inset -2px 2px #bcd4f6, inset 1px -1px #89ade4, inset 2px -2px #89ade4;
-}
+.primary { color: #fff; border-color: transparent; background: var(--accent-action); }
+.primary:hover:not(:disabled) { background: #0073e6; }
+.primary:active:not(:disabled) { background: #0064cc; }
 
-.btn:active:not(:disabled) {
-  background: linear-gradient(to bottom, #cdcac3 0%, #e3e3db 8%, #e5e5de 94%, #f2f2f1 100%);
-  box-shadow: none;
-}
+.success { color: #fff; border-color: transparent; background: #21843e; }
+.success:hover:not(:disabled) { background: #1b7335; }
+.success:active:not(:disabled) { background: #155e2a; }
+
+.danger { color: #fff; border-color: transparent; background: #d82f27; }
+.danger:hover:not(:disabled) { background: #c22620; }
+.danger:active:not(:disabled) { background: #a9211b; }
 
 .btn:disabled {
-  color: #a19f94;
-  border-color: #c9c7ba;
-  background: #f5f4ea;
+  color: var(--text-secondary);
+  border-color: var(--line);
+  background: var(--surface-muted);
   box-shadow: none;
+  cursor: not-allowed;
 }
 
-/* Brand variants keep XP chrome but tint the face. */
-.primary {
-  color: #fff;
-  font-weight: 700;
-  border-color: #9a3f00;
-  background: linear-gradient(to bottom, #ffb36b 0%, #ff8a2b 40%, var(--hood-accent) 60%, #d95800 100%);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45);
-}
-.primary:hover:not(:disabled) {
-  background: linear-gradient(to bottom, #ffc48a 0%, #ff9a45 40%, #ff7a17 60%, #e66300 100%);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55);
-}
-.primary:active:not(:disabled) { background: linear-gradient(to bottom, #d95800, #ff8a2b); }
-
-.success {
-  color: #fff;
-  font-weight: 700;
-  border-color: #1f5a12;
-  background: linear-gradient(to bottom, #8fe08b 0%, var(--start-green-hi) 35%, var(--start-green-mid) 65%, var(--start-green-lo) 100%);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45);
-}
-.success:hover:not(:disabled) {
-  background: linear-gradient(to bottom, #a6ec9f 0%, #72d66f 35%, #57b958 65%, #3f9e40 100%);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55);
-}
-.success:active:not(:disabled) { background: linear-gradient(to bottom, var(--start-green-lo), var(--start-green-hi)); }
-
-.danger {
-  color: #fff;
-  font-weight: 700;
-  border-color: #6e1000;
-  background: linear-gradient(to bottom, #ff9e8a 0%, #f2583a 40%, #d93a1a 60%, #a92300 100%);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4);
-}
-.danger:hover:not(:disabled) { background: linear-gradient(to bottom, #ffb3a3 0%, #f66b4f 40%, #e2492a 60%, #b72c06 100%); }
-
-.primary:disabled, .success:disabled, .danger:disabled { text-shadow: none; font-weight: 400; }
-
-.large { min-height: 30px; padding: 0 16px; font-size: 12px; }
+.large { min-height: 40px; padding: 9px 18px; font-size: 14px; }
 
 @media (max-width: 640px) {
-  .btn { min-height: 44px; min-width: 88px; font-size: 13px; }
+  .btn { min-height: 44px; min-width: 88px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
 }

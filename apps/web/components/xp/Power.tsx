@@ -1,26 +1,25 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
+import { useModalFocus } from './Dialog';
 import { HoodLogo, KeyIcon, RestartIcon, StandByIcon, TurnOffIcon } from './Icons';
 import styles from './Power.module.css';
 
 function Panel({ title, onCancel, children }: { title: string; onCancel: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    ref.current?.querySelector<HTMLElement>('button')?.focus();
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  useModalFocus(ref, onCancel);
 
   return createPortal(
     <div className={styles.overlay}>
-      <div ref={ref} className={styles.panel} role="alertdialog" aria-modal="true" aria-label={title}>
+      <div ref={ref} data-dockhood-dialog tabIndex={-1} className={styles.panel} role="alertdialog" aria-modal="true" aria-label={title}>
         <div className={styles.head}>
+          <span className={styles.trafficLights} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
           <span>{title}</span>
           <HoodLogo size={28} />
         </div>
@@ -43,14 +42,14 @@ type ShutDownProps = {
 
 export function ShutDownDialog({ onCancel, onStandBy, onTurnOff, onRestart }: ShutDownProps) {
   return (
-    <Panel title="Turn off hood.exe" onCancel={onCancel}>
+    <Panel title="Shut Down Dockhood" onCancel={onCancel}>
       <button type="button" className={styles.choice} onClick={onStandBy}>
         <StandByIcon size={36} />
-        Stand By
+        Sleep
       </button>
       <button type="button" className={styles.choice} onClick={onTurnOff}>
         <TurnOffIcon size={36} />
-        Turn Off
+        Shut Down
       </button>
       <button type="button" className={styles.choice} onClick={onRestart}>
         <RestartIcon size={36} />
@@ -62,10 +61,10 @@ export function ShutDownDialog({ onCancel, onStandBy, onTurnOff, onRestart }: Sh
 
 export function LogOffDialog({ onCancel, onLogOff }: { onCancel: () => void; onLogOff: () => void }) {
   return (
-    <Panel title="Log Off hood.exe" onCancel={onCancel}>
+    <Panel title="Log Out of Dockhood" onCancel={onCancel}>
       <button type="button" className={styles.choice} onClick={onLogOff}>
         <KeyIcon size={36} />
-        Log Off
+        Log Out
       </button>
     </Panel>
   );
@@ -74,12 +73,11 @@ export function LogOffDialog({ onCancel, onLogOff }: { onCancel: () => void; onL
 export function OffScreen({ onPowerOn }: { onPowerOn: () => void }) {
   return createPortal(
     <div className={styles.off} role="alert">
-      <div className={styles.offText}>It is now safe to turn off your computer.</div>
+      <div className={styles.offText}>Dockhood is shut down.</div>
       <button type="button" className={styles.powerBtn} onClick={onPowerOn} autoFocus>
-        <TurnOffIcon size={20} /> Power On
+        <TurnOffIcon size={20} /> Start Dockhood
       </button>
     </div>,
     document.body,
   );
 }
-

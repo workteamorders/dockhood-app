@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { Footer, OG_SIZE, XpFrame } from '@/lib/ogCard';
 
-export const alt = 'hood.exe — Mathematical Superintelligence. On-chain.';
+export const alt = 'Dockhood. The launchpad that boots clean.';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 
@@ -9,13 +9,13 @@ export const contentType = 'image/png';
 export default function Image() {
   return new ImageResponse(
     (
-      <XpFrame title="Welcome to hood.exe">
-        <div style={{ display: 'flex', alignItems: 'baseline', fontSize: 120, fontWeight: 800, fontStyle: 'italic', color: '#0a246a' }}>
-          hood<span style={{ color: '#ff6b1a' }}>.</span>exe
+      <XpFrame title="Dockhood">
+        <div style={{ display: 'flex', fontSize: 96, fontWeight: 700, letterSpacing: -4, color: '#1c1c20' }}>
+          Dockhood
         </div>
-        <div style={{ display: 'flex', marginTop: 10, fontSize: 52, fontStyle: 'italic', color: '#0a246a' }}>Mathematical Superintelligence. On-chain.</div>
-        <div style={{ display: 'flex', marginTop: 26, fontSize: 34, color: '#222' }}>
-          Launch coins backed by theorems. Trade on provable rigor. Powered by Robinhood Chain, routed through Pons.
+        <div style={{ display: 'flex', marginTop: 12, fontSize: 52, fontWeight: 700, letterSpacing: -1, color: '#3a2d6b' }}>The launchpad that boots clean.</div>
+        <div style={{ display: 'flex', marginTop: 24, maxWidth: 880, fontSize: 32, lineHeight: 1.5, color: '#45414f' }}>
+          Theorem-backed coins. Formally verified. Fully on-chain.
         </div>
         <Footer />
       </XpFrame>

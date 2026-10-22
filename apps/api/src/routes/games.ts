@@ -1,9 +1,7 @@
 import { randomInt } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
-import type { Address } from 'viem';
 import { z } from 'zod';
-import { HEXE_TOKEN } from '@hood/shared';
 import { MAX_RANKED_MOVES, replayRanked } from '@hood/shared/minesweeper';
 import { MAX_SOLITAIRE_MOVES, replaySolitaire } from '@hood/shared/solitaire';
 import { HttpError } from '../app';
@@ -63,7 +61,7 @@ type Entry = { rank: number; wallet: string; nickname: string | null; timeMs: nu
  * the moves and records the time if they won, GET /leaderboard/:game reads today's best per wallet.
  */
 export async function gameRoutes(app: FastifyInstance) {
-  const { db, kv, chain, now } = app.deps;
+  const { db, kv, chain, now, env: { network } } = app.deps;
   const runs = schema.gameRuns;
 
   /** Today's best run per wallet on a board, fastest first; the earlier finish wins a tie. */
@@ -129,10 +127,10 @@ export async function gameRoutes(app: FastifyInstance) {
     if (elapsed > rules.ttlMs) throw new HttpError(410, `Ranked games have to be finished within ${rules.ttlMs / 3_600_000} hour${rules.ttlMs > 3_600_000 ? 's' : ''}.`);
     if (!won) throw new HttpError(422, "Those moves don't win this game.");
 
-    const holder = await chain
-      .tokenBalances(wallet, [HEXE_TOKEN.address as Address])
-      .then((m) => (m.get(HEXE_TOKEN.address as Address) ?? 0n) > 0n)
-      .catch(() => false);
+    const official = network.officialToken?.address;
+    const holder = official
+      ? await chain.tokenBalances(wallet, [official]).then((m) => (m.get(official) ?? 0n) > 0n).catch(() => false)
+      : false;
     await db.update(runs).set({ timeMs: elapsed, holder }).where(eq(runs.id, run.id));
     cache.delete(`${game}:${run.level}`);
 

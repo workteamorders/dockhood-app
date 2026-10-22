@@ -6,6 +6,7 @@ import { dockerLeanRunner, type SandboxConfig } from './services/leanRunner';
 import { rpcPool, rpcPoolWriter } from './services/poolChain';
 import { memoryPubSub, redisPubSub } from './services/pubsub';
 import { requeueStale, verifierTick } from './verification/worker';
+import { assertRpcChain } from './services/network';
 
 /**
  * The formal verification worker (hood-exe-formal-verification-brief.md §4): runs on the verifier VPS, next to
@@ -22,12 +23,13 @@ const env = loadEnv();
 for (const key of ['RPC_URL_SERVER', 'VERIFICATION_POOL_ADDRESS', 'VERIFIER_BOT_PRIVATE_KEY'] as const) {
   if (!env[key]) throw new Error(`The verifier worker needs ${key}.`);
 }
+await assertRpcChain(env.network);
 const limits = JSON.parse(readFileSync(new URL('../../verifier/sandbox-config.json', import.meta.url), 'utf8')) as SandboxConfig;
 const { db, close } = await connectPostgres(env.DATABASE_URL);
 const redis = env.REDIS_URL ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2, family: 0 }) : null;
 const pubsub = redis ? redisPubSub(redis) : memoryPubSub();
-const pool = rpcPool(env.RPC_URL_SERVER!, env.VERIFICATION_POOL_ADDRESS as `0x${string}`);
-const writer = rpcPoolWriter(env.RPC_URL_SERVER!, pool.address, env.VERIFIER_BOT_PRIVATE_KEY as `0x${string}`);
+const pool = rpcPool(env.network, env.VERIFICATION_POOL_ADDRESS as `0x${string}`);
+const writer = rpcPoolWriter(env.network, pool.address, env.VERIFIER_BOT_PRIVATE_KEY as `0x${string}`);
 const runner = dockerLeanRunner({
   ...limits,
   image: env.VERIFIER_IMAGE,

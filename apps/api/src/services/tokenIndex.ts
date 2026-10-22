@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, lt, or } from 'drizzle-orm';
 import { createPublicClient, decodeEventLog, erc20Abi, http, toEventSelector, type Address, type Hex } from 'viem';
-import { PONS_V2, PUBLIC_RPC_MAINNET, parseDescription, ponsCurveAbi, ponsFactoryAbi, ponsTokenAbi, robinhoodChain } from '@hood/shared';
+import { parseDescription, ponsCurveAbi, ponsFactoryAbi, ponsTokenAbi, type NetworkConfig } from '@hood/shared';
 import { schema, type Db } from '../db';
 import { storedScore } from '../routes/score';
 
@@ -33,8 +33,8 @@ const TOKEN_LAUNCHED_TOPIC = toEventSelector(ponsFactoryAbi.find((x) => x.type =
 
 const noNul = (s: string) => s.replace(/\u0000/g, '');
 
-export function rpcLaunchSource(rpcUrl: string = PUBLIC_RPC_MAINNET): LaunchSource {
-  const client = createPublicClient({ chain: robinhoodChain(rpcUrl), transport: http(rpcUrl, { retryCount: 3 }) });
+export function rpcLaunchSource(network: NetworkConfig): LaunchSource {
+  const client = createPublicClient({ chain: network.chain, transport: http(network.rpcUrl, { retryCount: 3 }) });
   const clip = (s: string, max: number) => (s.length > max ? s.slice(0, max) : s);
 
   return {
@@ -46,7 +46,7 @@ export function rpcLaunchSource(rpcUrl: string = PUBLIC_RPC_MAINNET): LaunchSour
         method: 'eth_getLogs',
         params: [
           {
-            address: PONS_V2.launchFactory,
+            address: network.pons.launchFactory,
             topics: [TOKEN_LAUNCHED_TOPIC],
             fromBlock: `0x${fromBlock.toString(16)}`,
             toBlock: `0x${toBlock.toString(16)}`,
@@ -98,7 +98,7 @@ export function rpcLaunchSource(rpcUrl: string = PUBLIC_RPC_MAINNET): LaunchSour
         allowFailure: true,
         batchSize: 16_384,
         contracts: items.flatMap(({ token, curve }) => [
-          { address: PONS_V2.launchFactory, abi: ponsFactoryAbi, functionName: 'getLaunchedToken', args: [token] } as const,
+          { address: network.pons.launchFactory, abi: ponsFactoryAbi, functionName: 'getLaunchedToken', args: [token] } as const,
           { address: curve, abi: ponsCurveAbi, functionName: 'getReserves' } as const,
           { address: curve, abi: ponsCurveAbi, functionName: 'realQuoteReserve' } as const,
         ]),

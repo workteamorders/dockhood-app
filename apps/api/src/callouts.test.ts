@@ -155,7 +155,10 @@ describe('GET /callouts', () => {
     const cookie = await signIn(ctx);
     for (let i = 0; i < n; i++) {
       ctx.advance(1_000);
-      await post(cookie, `call ${i}`);
+      const response = await post(cookie, `call ${i}`);
+      expect(response.statusCode).toBe(201);
+      // Database defaults use wall time, not the fixture clock; avoid timestamp ties in pagination.
+      await ctx.db.update(schema.callouts).set({ createdAt: ctx.now() }).where(eq(schema.callouts.id, response.json().callout.id));
     }
     return cookie;
   }

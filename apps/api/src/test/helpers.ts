@@ -107,7 +107,7 @@ export async function siweMessage(ctx: Ctx, account: Account, overrides: Partial
     statement: 'Sign in to hood.exe',
     uri: ORIGIN,
     version: '1',
-    chainId: 4663,
+    chainId: ctx.app.deps.env.network.chainId,
     nonce,
     issuedAt: ctx.now(),
     ...overrides,

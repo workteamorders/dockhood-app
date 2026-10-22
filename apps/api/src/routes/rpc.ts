@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import { PUBLIC_RPC_MAINNET } from '@hood/shared';
 import { allow } from '../kv';
 
 /**
@@ -35,7 +34,7 @@ const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.
 
 export async function rpcRoutes(app: FastifyInstance) {
   const { env, kv } = app.deps;
-  const upstream = env.RPC_URL_SERVER ?? PUBLIC_RPC_MAINNET;
+  const upstream = env.network.rpcUrl;
 
   app.post('/rpc', { bodyLimit: 256 * 1024 }, async (req, reply) => {
     const body = req.body as RpcRequest | RpcRequest[] | undefined;

@@ -7,36 +7,9 @@ import styles from './Window.module.css';
 const MOBILE_QUERY = '(max-width: 640px)';
 
 export function CtrlGlyph({ kind }: { kind: 'min' | 'max' | 'restore' | 'close' }) {
-  if (kind === 'min') {
-    return (
-      <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
-        <rect x="2" y="9" width="6" height="2.5" fill="#fff" />
-      </svg>
-    );
-  }
-  if (kind === 'max') {
-    return (
-      <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
-        <rect x="2" y="2" width="9" height="9" fill="none" stroke="#fff" strokeWidth="1.2" />
-        <rect x="2" y="2" width="9" height="2.4" fill="#fff" />
-      </svg>
-    );
-  }
-  if (kind === 'restore') {
-    return (
-      <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
-        <rect x="4.5" y="1.5" width="7" height="7" fill="none" stroke="#fff" />
-        <rect x="4.5" y="1.5" width="7" height="2" fill="#fff" />
-        <rect x="1.5" y="4.5" width="7" height="7" fill="#2263d5" stroke="#fff" />
-        <rect x="1.5" y="4.5" width="7" height="2" fill="#fff" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
-      <path d="M2.5 2.5 L10.5 10.5 M10.5 2.5 L2.5 10.5" stroke="#fff" strokeWidth="2" strokeLinecap="square" />
-    </svg>
-  );
+  return <svg width="8" height="8" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
+    {kind === 'close' ? <path d="m2 2 8 8m0-8-8 8"/> : kind === 'min' ? <path d="M1 6h10"/> : <path d="M2 5V2h3m2 8h3V7M2 2l8 8"/>}
+  </svg>;
 }
 
 type WindowProps = {
@@ -67,7 +40,7 @@ export function Window({ win, active, icon, children, maximizable = true }: Wind
     const el = ref.current;
     if (!d || !el || d.pointer !== e.pointerId) return;
     const vw = window.innerWidth;
-    const vh = window.innerHeight - 30;
+    const vh = ref.current?.parentElement?.clientHeight ?? window.innerHeight;
     // Keep at least part of the title bar reachable.
     d.x = Math.min(vw - 60, Math.max(60 - win.w, e.clientX - d.dx));
     d.y = Math.min(vh - 30, Math.max(0, e.clientY - d.dy));
@@ -100,8 +73,10 @@ export function Window({ win, active, icon, children, maximizable = true }: Wind
         display: win.minimized ? 'none' : undefined,
       }}
       onPointerDownCapture={() => focus(win.id)}
+      onFocusCapture={() => focus(win.id)}
     >
       <header
+        role="presentation"
         className={styles.titlebar}
         onPointerDown={onTitlePointerDown}
         onPointerMove={onTitlePointerMove}
@@ -111,26 +86,24 @@ export function Window({ win, active, icon, children, maximizable = true }: Wind
           if (maximizable && !(e.target as HTMLElement).closest('button')) toggleMaximize(win.id);
         }}
       >
-        <span className={styles.titleIcon}>{icon}</span>
-        <span className={styles.title}>{win.title}</span>
         <span className={styles.controls}>
-          <button type="button" className={styles.ctrl} aria-label="Minimize" onClick={() => minimize(win.id)}>
+          <button type="button" className={`${styles.ctrl} ${styles.close}`} aria-label="Close" onClick={() => close(win.id)}>
+            <CtrlGlyph kind="close" />
+          </button>
+          <button type="button" className={`${styles.ctrl} ${styles.minimize}`} aria-label="Minimize" onClick={() => minimize(win.id)}>
             <CtrlGlyph kind="min" />
           </button>
-          {maximizable && (
             <button
               type="button"
               className={`${styles.ctrl} ${styles.maximizeCtrl}`}
               aria-label={win.maximized ? 'Restore' : 'Maximize'}
+              disabled={!maximizable}
               onClick={() => toggleMaximize(win.id)}
             >
               <CtrlGlyph kind={win.maximized ? 'restore' : 'max'} />
             </button>
-          )}
-          <button type="button" className={`${styles.ctrl} ${styles.close}`} aria-label="Close" onClick={() => close(win.id)}>
-            <CtrlGlyph kind="close" />
-          </button>
         </span>
+        <span className={styles.title}><span className={styles.titleIcon}>{icon}</span>{win.title}</span>
       </header>
       <div className={styles.body}>{children}</div>
     </section>

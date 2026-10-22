@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { addressUrl, shortAddress } from '@hood/shared';
+import { shortAddress } from '@hood/shared';
+import { addressUrl } from '@/lib/network';
 import { HOOD_TOKEN } from '@/lib/hoodToken';
 import { openToken } from '@/lib/openApp';
 import { Button } from './Button';

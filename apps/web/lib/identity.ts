@@ -10,6 +10,6 @@ export function useIdentity() {
     address,
     connected: isConnected && !!address,
     label: isConnected && address ? shortAddress(address) : 'Guest',
-    role: isConnected ? 'hood.exe user' : 'not signed in',
+    role: isConnected ? 'Dockhood user' : 'not signed in',
   };
 }

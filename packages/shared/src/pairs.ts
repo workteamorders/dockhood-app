@@ -24,9 +24,9 @@ export const LAUNCH_PAIRS: readonly PairToken[] = [
   ...PAIR_TOKENS.filter((p) => p.kind === 'stock').slice().sort((a, b) => a.symbol.localeCompare(b.symbol)),
 ];
 
-export function findPair(address: string): PairToken | undefined {
+export function findPair(address: string, catalog: readonly PairToken[] = PAIR_TOKENS): PairToken | undefined {
   const a = address.toLowerCase();
-  return a === NATIVE_PAIR ? ETH_PAIR : PAIR_TOKENS.find((p) => p.address.toLowerCase() === a);
+  return a === NATIVE_PAIR ? ETH_PAIR : catalog.find((p) => p.address.toLowerCase() === a);
 }
 
 /** Buy presets (docs/BRIEF.md §5.4): ETH 0.01–0.5, stablecoins 10–500; other pairs have none. */

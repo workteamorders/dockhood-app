@@ -21,21 +21,36 @@ export function Tabs({ tabs, initial }: { tabs: TabDef[]; initial?: string }) {
   return (
     <div className={styles.tabs}>
       <div role="tablist" className={styles.tabList}>
-        {tabs.map((t) => (
+        {tabs.map((t, index) => (
           <button
             key={t.id}
             type="button"
             role="tab"
             id={`${base}-${t.id}`}
             aria-selected={t.id === active?.id}
+            aria-controls={`${base}-panel`}
+            tabIndex={t.id === active?.id ? 0 : -1}
             className={`${styles.tab} ${t.id === active?.id ? styles.tabActive : ''}`}
             onClick={() => setCurrent(t.id)}
+            onKeyDown={(e) => {
+              let next: number;
+              switch (e.key) {
+                case 'ArrowRight': next = (index + 1) % tabs.length; break;
+                case 'ArrowLeft': next = (index - 1 + tabs.length) % tabs.length; break;
+                case 'Home': next = 0; break;
+                case 'End': next = tabs.length - 1; break;
+                default: return;
+              }
+              e.preventDefault();
+              setCurrent(tabs[next].id);
+              e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+            }}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div role="tabpanel" aria-labelledby={`${base}-${active?.id}`} className={styles.tabPanel}>
+      <div id={`${base}-panel`} role="tabpanel" aria-labelledby={active ? `${base}-${active.id}` : undefined} tabIndex={0} className={styles.tabPanel}>
         {active?.content}
       </div>
     </div>

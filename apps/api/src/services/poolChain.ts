@@ -12,7 +12,8 @@ import {
   type Hex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { ROBINHOOD_CHAIN_ID, robinhoodChain, tierIndex, verificationPoolAbi, type Tier } from '@hood/shared';
+import { tierIndex, verificationPoolAbi, type NetworkConfig, type Tier } from '@hood/shared';
+import { assertRpcChain } from './network';
 
 /** A VerificationPool submission, from its Submitted event. */
 export type PoolSubmission = {
@@ -60,8 +61,8 @@ export class PoolRevert extends Error {
 /** How long a bot approval stays valid: the worker relays it at once, so an hour is plenty. */
 const APPROVAL_TTL_S = 3_600n;
 
-export function rpcPool(rpcUrl: string, address: Address): PoolReader {
-  const client = createPublicClient({ chain: robinhoodChain(rpcUrl), transport: http(rpcUrl, { retryCount: 3 }) });
+export function rpcPool(network: NetworkConfig, address: Address): PoolReader {
+  const client = createPublicClient({ chain: network.chain, transport: http(network.rpcUrl, { retryCount: 3 }) });
   const blockTimes = new Map<bigint, Date>();
   const timeOf = async (blockNumber: bigint) => {
     let t = blockTimes.get(blockNumber);
@@ -129,14 +130,15 @@ function revertName(e: unknown): string | null {
   return revert instanceof ContractFunctionRevertedError ? (revert.data?.errorName ?? null) : null;
 }
 
-export function rpcPoolWriter(rpcUrl: string, address: Address, botKey: Hex): PoolWriter {
-  const chain = robinhoodChain(rpcUrl);
+export function rpcPoolWriter(network: NetworkConfig, address: Address, botKey: Hex): PoolWriter {
+  const { chain, rpcUrl } = network;
   const account = privateKeyToAccount(botKey);
   const client = createPublicClient({ chain, transport: http(rpcUrl, { retryCount: 3 }) });
   const wallet = createWalletClient({ chain, account, transport: http(rpcUrl, { retryCount: 3 }) });
 
   /** Simulates first (so a revert names its reason without spending gas), sends, and waits for success. */
   async function send(request: Parameters<typeof client.simulateContract>[0]): Promise<Hash> {
+    await assertRpcChain(network);
     let simulated;
     try {
       simulated = await client.simulateContract({ ...request, account });
@@ -157,7 +159,7 @@ export function rpcPoolWriter(rpcUrl: string, address: Address, botKey: Hex): Po
       // From the chain's clock, not this machine's: a drifting server clock can't make approvals expire on arrival.
       const deadline = (await client.getBlock()).timestamp + APPROVAL_TTL_S;
       const signature = await account.signTypedData({
-        domain: { name: 'hood.exe VerificationPool', version: '1', chainId: ROBINHOOD_CHAIN_ID, verifyingContract: address },
+        domain: { name: 'hood.exe VerificationPool', version: '1', chainId: network.chainId, verifyingContract: address },
         types: { Verify: [{ name: 'id', type: 'bytes32' }, { name: 'tier', type: 'uint8' }, { name: 'deadline', type: 'uint256' }] },
         primaryType: 'Verify',
         message: { id, tier: tierIndex(tier), deadline },

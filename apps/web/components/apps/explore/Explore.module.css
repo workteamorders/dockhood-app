@@ -1,92 +1,36 @@
-.explore { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-
-.toolbar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px 0;
-  border-bottom: 1px solid #919b9c;
-}
-.tabs { display: flex; gap: 1px; margin-bottom: -1px; }
-.tab, .tabActive {
-  font: inherit;
-  font-size: 11px;
-  color: #000;
-  padding: 3px 10px 2px;
-  border: 1px solid #919b9c;
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-  background: linear-gradient(to bottom, #fff, #fcfcfe 26%, #f4f3ee 70%, #e7e6df);
-  margin-top: 2px;
-}
-.tab:hover { border-top: 2px solid #f9c94c; padding-top: 2px; }
-.tabActive { margin-top: 0; padding-bottom: 4px; background: #fff; border-top: 2px solid var(--hood-accent); }
-.search { flex: 1 1 140px; min-width: 0; max-width: 240px; margin: 0 0 4px auto; }
-.sort { margin-bottom: 4px; white-space: nowrap; }
-
-.view { flex: 1 1 auto; min-height: 0; overflow: auto; background: #fff; padding: 8px; }
-
-.grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 6px;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  height: 100%;
-  padding: 6px;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  outline: none;
-}
-.card:hover { background: #eef3fc; border-color: #b7cdf0; }
-.card:focus-visible { background: #dce7fa; border-color: var(--selection); }
-
-.cardHead { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.explore { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--surface); color: var(--text-primary); font: 13px/1.5 var(--font-ui); backdrop-filter: blur(32px) saturate(180%); }
+.toolbar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 3px; padding: 3px; border-radius: 9px; background: var(--surface-muted); }
+.tab, .tabActive { font: inherit; font-size: 12px; color: var(--text-secondary); padding: 6px 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; cursor: pointer; }
+.tab:hover { color: var(--text-primary); background: rgba(255, 255, 255, .45); }
+.tabActive { background: #fff; color: var(--accent-action); border-color: var(--line); box-shadow: 0 1px 3px rgba(0, 0, 0, .05); font-weight: 600; }
+.search { flex: 1 1 140px; min-width: 0; max-width: 240px; margin-left: auto; }
+.search, .sort { border: 1px solid var(--line); border-radius: 7px; background: rgba(255, 255, 255, .65); padding: 8px 10px; color: var(--text-primary); font: inherit; box-shadow: none; }
+.sort { white-space: nowrap; }
+.view { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 16px; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.card { display: flex; flex-direction: column; gap: 12px; height: 100%; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .6); cursor: pointer; transition: background .15s, border-color .15s; }
+.card:hover { background: rgba(10, 132, 255, .06); border-color: rgba(10, 132, 255, .25); }
+.card:focus-visible, .explore button:focus-visible, .search:focus-visible, .sort:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.cardHead { display: flex; gap: 10px; align-items: center; min-width: 0; }
 .names { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .names b, .names span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.names span { color: #555; }
-
-.logo {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid #c6c3b6;
-  background: linear-gradient(135deg, var(--hood-brand), var(--hood-brand-lo));
-  color: #fff;
-  font-family: var(--font-display);
-  font-style: italic;
-}
+.names span { color: var(--text-secondary); font-size: 12px; }
+.logo { flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 24%; background: linear-gradient(145deg, #3ca4ff, #6860d8); color: #fff; font-family: var(--font-ui); font-weight: 600; }
 .logo img { width: 100%; height: 100%; object-fit: cover; display: block; background: #fff; }
-
-.snippet {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 12px;
-  line-height: 1.35;
-  height: 2.7em;
-  overflow: hidden;
-  color: #222;
-}
-.plain { font-family: var(--font-ui); font-style: normal; font-size: 11px; color: #555; }
+.snippet { font-family: var(--font-ui); font-size: 13px; line-height: 1.5; height: 3em; overflow: hidden; color: var(--text-primary); }
+.plain { font-family: var(--font-ui); font-style: normal; font-size: 12px; color: var(--text-secondary); }
 .snippet :global(.katex-display) { margin: 0; }
-
-.stats { display: flex; justify-content: space-between; gap: 6px; color: #333; font-variant-numeric: tabular-nums; }
-
-.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 40px auto; color: #555; text-align: center; }
-.more { display: flex; justify-content: center; padding: 10px 0 2px; }
-
+.stats { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 48px auto; color: var(--text-secondary); text-align: center; }
+.more { display: flex; justify-content: center; padding: 16px 0 4px; }
 @media (max-width: 640px) {
-  .grid { grid-template-columns: 1fr 1fr; }
-  .toolbar { flex-wrap: wrap; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .toolbar, .view { padding: 12px; }
+  .card { padding: 10px; gap: 10px; }
+  .cardHead { gap: 6px; }
   .search { order: 3; flex-basis: 100%; max-width: none; margin-left: 0; }
+  .tab, .tabActive { padding: 6px 8px; }
 }
+@media (max-width: 360px) { .grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
