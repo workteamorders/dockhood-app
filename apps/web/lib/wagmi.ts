@@ -7,10 +7,11 @@ import {
   rainbowWallet,
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
-import { createConfig, http } from 'wagmi';
+import { createConfig } from 'wagmi';
 import type { Chain } from 'viem';
 import { appRpc, network } from './network';
 import { anvilDevWallet } from './devWallet';
+import { guardedHttp } from './rpcTransport';
 
 /**
  * The app reads the chain through NEXT_PUBLIC_RPC_URL: in production `/api/rpc`, the API forwarding to its
@@ -46,9 +47,14 @@ const connectors = connectorsForWallets(walletList, {
 export const wagmiConfig = createConfig({
   chains: [chain],
   connectors,
-  transports: { [chain.id]: http(transportUrl) },
+  transports: { [chain.id]: guardedHttp(transportUrl, chain.id) },
   ssr: true,
 });
+
+/** Wallet writes bypass the public transport, so validate it before starting a wallet flow too. */
+export async function ensureRpcNetwork(): Promise<void> {
+  await wagmiConfig.getClient({ chainId: chain.id }).request({ method: 'eth_chainId' });
+}
 
 declare module 'wagmi' {
   interface Register {

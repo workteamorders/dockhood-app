@@ -2,9 +2,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { parseSiweMessage } from 'viem/siwe';
 import { signMessage } from 'wagmi/actions';
 import { verifySiwe } from './api';
+import { ensureRpcNetwork } from './wagmi';
 
 vi.mock('wagmi/actions', () => ({ signMessage: vi.fn(async () => '0xsigned') }));
-vi.mock('./wagmi', () => ({ wagmiConfig: {} }));
+vi.mock('./wagmi', () => ({ wagmiConfig: {}, ensureRpcNetwork: vi.fn(async () => {}) }));
 vi.mock('./api', () => ({
   currentSession: vi.fn(async () => null), logout: vi.fn(),
   siweNonce: vi.fn(async () => 'testnonce123'), verifySiwe: vi.fn(),
@@ -36,4 +37,13 @@ it.each(['4663', '46630'])('signs SIWE for the configured chain %s', async (chai
     chainId: Number(chainId), address, domain: 'dockhood.example', uri: 'https://dockhood.example',
   });
   expect(verifySiwe).toHaveBeenCalledWith(message, '0xsigned');
+});
+
+it('does not sign or verify SIWE when the RPC network check fails', async () => {
+  vi.stubEnv('NEXT_PUBLIC_CHAIN_ID', '46630');
+  vi.mocked(ensureRpcNetwork).mockRejectedValueOnce(new Error('RPC network mismatch.'));
+  const { ensureSession } = await import('./siwe');
+  await expect(ensureSession('0x3333333333333333333333333333333333333333')).rejects.toThrow('RPC network mismatch');
+  expect(signMessage).not.toHaveBeenCalled();
+  expect(verifySiwe).not.toHaveBeenCalled();
 });

@@ -129,7 +129,7 @@ export function mineHook(initCode: Hex, limit = 1_000_000) {
   throw new Error('Hook salt search exhausted; no deployment plan was produced.');
 }
 
-export function buildPlan(wallets: Wallets, artifacts: Artifacts): Plan {
+export function buildPlan(wallets: Pick<Wallets, 'addresses'>, artifacts: Artifacts): Plan {
   const owner = wallets.addresses.deployer;
   const addresses: Record<string, Address> = {};
   const steps: Step[] = [];

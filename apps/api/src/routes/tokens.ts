@@ -22,15 +22,20 @@ const query = z.object({
 const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 /** Explore's search: the WHERE clause, and the ordering that puts an exact ticker match first. */
-function searchFilter(raw: string | undefined): { where?: SQL; first?: SQL } {
+function searchFilter(raw: string | undefined, network: NetworkConfig): { where?: SQL; first?: SQL } {
   const text = raw?.replace(/^\$/, '').trim().toLowerCase();
   if (!text) return {};
   if (isAddress(text, { strict: false })) return { where: sql`lower(${schema.tokens.tokenAddress}) = ${text}` };
   const symbol = sql`lower(${schema.tokens.symbol})`;
   const like = likeEscape(text);
+  const official = network.officialToken;
+  const alias = official?.ticker.toLowerCase().startsWith(text)
+    ? sql`lower(${schema.tokens.tokenAddress}) = ${official.address.toLowerCase()}`
+    : undefined;
+  if (alias && text === official?.ticker.toLowerCase()) return { where: alias };
   return {
-    where: or(sql`${symbol} like ${`${like}%`}`, sql`lower(${schema.tokens.name}) like ${`%${like}%`}`),
-    first: sql`(${symbol} = ${text}) desc`,
+    where: or(alias, sql`${symbol} like ${`${like}%`}`, sql`lower(${schema.tokens.name}) like ${`%${like}%`}`),
+    first: alias ? sql`case when ${alias} then 2 when ${symbol} = ${text} then 1 else 0 end desc` : sql`(${symbol} = ${text}) desc`,
   };
 }
 
@@ -46,7 +51,7 @@ const tradeQuery = z.object({ limit: z.coerce.number().int().min(1).max(50).defa
 
 type TokenRow = typeof schema.tokens.$inferSelect;
 
-const units = (raw: bigint | string | null, decimals: number) => (raw == null ? null : Number(formatUnits(BigInt(raw), decimals)));
+const units = (raw: bigint | string | null, decimals: number | null) => (raw == null || decimals == null ? null : Number(formatUnits(BigInt(raw), decimals)));
 
 /**
  * Display numbers in pair-asset units. Prices are floats on purpose: they are only shown, never used to
@@ -54,9 +59,9 @@ const units = (raw: bigint | string | null, decimals: number) => (raw == null ? 
  */
 export function toItem(row: TokenRow, network: NetworkConfig) {
   const pair = network.findPair(row.pairToken);
-  const decimals = pair?.decimals ?? 18;
+  const decimals = pair?.decimals ?? null;
   const onCurve = row.phase === 0 && row.quoteReserve != null && row.tokenReserve != null && BigInt(row.tokenReserve) > 0n;
-  const price = onCurve ? units(row.quoteReserve, decimals)! / units(row.tokenReserve, 18)! : null;
+  const price = onCurve && decimals != null ? units(row.quoteReserve, decimals)! / units(row.tokenReserve, 18)! : null;
   const threshold = BigInt(row.graduationThreshold);
   const raised = row.realQuoteReserve != null ? BigInt(row.realQuoteReserve) : null;
   return {
@@ -91,7 +96,7 @@ export function toItem(row: TokenRow, network: NetworkConfig) {
 export type TokenItem = ReturnType<typeof toItem>;
 
 /** Indexer prices are raw quote units per raw token unit; this is pair asset per whole token. */
-export const toPairPrice = (raw: string, pairDecimals: number) => Number(raw) * 10 ** (18 - pairDecimals);
+export const toPairPrice = (raw: string, pairDecimals: number | null) => pairDecimals == null ? null : Number(raw) * 10 ** (18 - pairDecimals);
 
 /** Merges consecutive candles into `size`-second buckets (15m from 5m). Input oldest first. */
 export function mergeCandles(candles: EnvioCandle[], size: number): EnvioCandle[] {
@@ -154,7 +159,7 @@ export async function tokenRoutes(app: FastifyInstance) {
   app.get('/tokens', async (req) => {
     const q = query.parse(req.query);
     return cached(JSON.stringify(q), CACHE_MS, async () => {
-      const search = searchFilter(q.q);
+      const search = searchFilter(q.q, network);
       const where = and(q.tab === 'hood' ? eq(schema.tokens.hood, true) : undefined, search.where);
       // Amounts across pairs aren't comparable without USD prices (Phase 2). Pons sizes each pair's
       // graduation threshold to a similar value, and every curve has the same shape relative to it, so
@@ -196,7 +201,7 @@ export async function tokenRoutes(app: FastifyInstance) {
     return fromIndexer(() => cached(`candles:${req.params.address.toLowerCase()}:${q.interval}:${q.limit}`, CACHE_MS, async () => {
       const source = needEnvio();
       const row = await findToken(db, req.params.address);
-      const decimals = network.findPair(row.pairToken)?.decimals ?? 18;
+      const decimals = network.findPair(row.pairToken)?.decimals ?? null;
       const seconds = CHART_INTERVALS[q.interval];
       const raw =
         seconds === 900
@@ -210,7 +215,7 @@ export async function tokenRoutes(app: FastifyInstance) {
           high: toPairPrice(c.high, decimals),
           low: toPairPrice(c.low, decimals),
           close: toPairPrice(c.close, decimals),
-          volume: units(c.volumeQuote, decimals)!,
+          volume: units(c.volumeQuote, decimals),
           trades: c.trades,
         })),
       };
@@ -223,14 +228,14 @@ export async function tokenRoutes(app: FastifyInstance) {
     return fromIndexer(() => cached(`trades:${req.params.address.toLowerCase()}:${q.limit}`, 10_000, async () => {
       const source = needEnvio();
       const row = await findToken(db, req.params.address);
-      const decimals = network.findPair(row.pairToken)?.decimals ?? 18;
+      const decimals = network.findPair(row.pairToken)?.decimals ?? null;
       const trades = await source.trades(row.tokenAddress, q.limit);
       return {
         trades: trades.map((t) => ({
           id: t.id,
           trader: t.trader,
           side: t.isBuy ? ('buy' as const) : ('sell' as const),
-          quote: units(t.quoteAmount, decimals)!,
+          quote: units(t.quoteAmount, decimals),
           tokens: units(t.tokenAmount, 18)!,
           price: toPairPrice(t.price, decimals),
           time: t.timestamp,

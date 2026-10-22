@@ -8,8 +8,8 @@
  * Needs the API (:8787) and the verifier worker running against the same Postgres and anvil, with ADMIN_WALLETS set
  * to anvil account 0 and VERIFICATION_POOL_ADDRESS to the deployed pool.
  */
-import { createPublicClient, createWalletClient, defineChain, formatEther, getAddress, http, parseEther } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { createPublicClient, createWalletClient, defineChain, formatEther, getAddress, http, parseEther, type LocalAccount } from 'viem';
+import { mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage } from 'viem/siwe';
 import { connectPostgres, schema } from '../src/db';
 import { verificationPoolAbi } from '@hood/shared';
@@ -29,11 +29,11 @@ for (const [name, value] of [['RPC', RPC], ['API', API]]) {
 
 // anvil's default accounts 0 (admin/owner) and 3 (the submitter)
 const admin = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
-const user = privateKeyToAccount('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a');
+const user = mnemonicToAccount('test test test test test test test test test test test junk', { addressIndex: 3 });
 const chain = defineChain({ id: 4663, name: 'anvil', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [RPC] } } });
 const pub = createPublicClient({ chain, transport: http(RPC) });
 if (await pub.getChainId() !== chain.id) throw new Error(`Local Anvil must use chain ID ${chain.id}.`);
-const wallet = (account: typeof user) => createWalletClient({ account, chain, transport: http(RPC) });
+const wallet = (account: LocalAccount) => createWalletClient({ account, chain, transport: http(RPC) });
 
 // A fresh coin and proof every run, so it can be repeated against the same database.
 const RUN = Date.now();
@@ -46,7 +46,7 @@ const must = (ok: unknown, msg: string) => {
   console.log(`  ✓ ${msg}`);
 };
 
-async function signIn(account: typeof user): Promise<string> {
+async function signIn(account: LocalAccount): Promise<string> {
   const { nonce } = (await (await fetch(`${API}/auth/siwe`)).json()) as { nonce: string };
   const message = createSiweMessage({ domain: 'localhost:3000', address: account.address, statement: 'Sign in to hood.exe', uri: 'http://localhost:3000', version: '1', chainId: 4663, nonce, issuedAt: new Date() });
   const res = await fetch(`${API}/auth/siwe`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, signature: await account.signMessage({ message }) }) });

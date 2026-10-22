@@ -13,7 +13,8 @@
     "worker": "tsx src/worker.ts",
     "dev:worker": "tsx watch --env-file-if-exists=.env src/worker.ts",
     "verifier": "tsx src/verifierWorker.ts",
-    "verify:e2e": "tsx scripts/verify-e2e.ts"
+    "verify:e2e": "tsx scripts/verify-e2e.ts",
+    "verify:local": "tsx scripts/local-verification-e2e.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",

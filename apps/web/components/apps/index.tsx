@@ -15,6 +15,7 @@ import { Welcome } from './Welcome';
 
 type AppComponent = ComponentType<{ win: WindowState }>;
 
+const FinderWindow = lazy(() => import('@/components/apps/finder/Finder').then((m) => ({ default: m.Finder })));
 // The games are code-split: their code loads the first time someone opens them (hood-exe-games-brief.md §9).
 const SolitaireWindow = lazy(() => import('@/components/games/Solitaire/SolitaireWindow'));
 const MinesweeperWindow = lazy(() => import('@/components/games/Minesweeper/MinesweeperWindow'));
@@ -24,6 +25,7 @@ const VerificationAdmin = lazy(() => import('@/components/verification/Verificat
 
 export const APP_COMPONENTS: Record<AppId, AppComponent | LazyExoticComponent<AppComponent>> = {
   welcome: Welcome,
+  finder: FinderWindow,
   launch: Launch,
   explore: Explore,
   callouts: Callouts,

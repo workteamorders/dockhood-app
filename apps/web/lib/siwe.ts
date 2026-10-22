@@ -3,13 +3,14 @@ import { createSiweMessage } from 'viem/siwe';
 import { signMessage } from 'wagmi/actions';
 import { network } from './network';
 import { currentSession, logout, siweNonce, verifySiwe } from './api';
-import { wagmiConfig } from './wagmi';
+import { ensureRpcNetwork, wagmiConfig } from './wagmi';
 
 /**
  * Makes sure the API session belongs to `address`, asking the wallet to sign in when it doesn't
  * (docs/BRIEF.md §10). A session for another wallet is replaced.
  */
 export async function ensureSession(address: Address): Promise<void> {
+  await ensureRpcNetwork();
   const wallet = await currentSession();
   if (wallet && isAddressEqual(wallet as Address, address)) return;
   if (wallet) await logout().catch(() => {});

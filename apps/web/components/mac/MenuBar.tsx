@@ -7,6 +7,7 @@ import { useIdentity } from '@/lib/identity';
 import { network } from '@/lib/network';
 import { openApp } from '@/lib/openApp';
 import { useWindows } from '@/store/windows';
+import { finderCommands, useFinderUi, type FinderActions } from '@/store/finderUi';
 import { ContractTrayButton } from '../xp/ContractAddress';
 import { PriceTicker } from '../xp/PriceTicker';
 import { DockhoodLogo } from './AppIcon';
@@ -22,7 +23,42 @@ const closeMenu = (e: SyntheticEvent) => {
   menu?.querySelector('summary')?.focus();
 };
 
-export function MenuBar({ onLogOff, onShutDown }: { onLogOff: () => void; onShutDown: () => void }) {
+function FinderMenus({ windowId }: { windowId: string }) {
+  const flags = useFinderUi((s) => s.flags);
+  const fire = (action: Exclude<keyof FinderActions, 'setView'>) => finderCommands.current?.[action]();
+  return <>
+    <details name="desktop-menu" className={`${styles.menu} ${styles.finderMenu}`}>
+      <summary>File</summary>
+      <div className={styles.dropdown} onClick={closeMenu}>
+        <button disabled={!flags.canCreate} onClick={() => fire('newFolder')}>New Folder</button>
+        <button disabled={!flags.canImport} onClick={() => fire('importFiles')}>Import Files…</button>
+        <button disabled={!flags.canTrash} onClick={() => fire('trash')}>Move to Trash</button>
+        {flags.trashView && <><hr/><button disabled={!flags.canEmptyTrash} onClick={() => fire('emptyTrash')}>Empty Trash…</button></>}
+        <hr/><button onClick={() => useWindows.getState().close(windowId)}>Close Window</button>
+      </div>
+    </details>
+    <details name="desktop-menu" className={`${styles.menu} ${styles.finderMenu}`}>
+      <summary>Edit</summary>
+      <div className={styles.dropdown} onClick={closeMenu}>
+        <button disabled={!flags.canRename} onClick={() => fire('rename')}>Rename</button>
+        <button disabled={!flags.canCopy} onClick={() => fire('copy')}>Copy</button>
+        <button disabled={!flags.canPaste} onClick={() => fire('paste')}>Paste</button>
+        <hr/><button disabled={!flags.canSelectAll} onClick={() => fire('selectAll')}>Select All</button>
+        {flags.trashView && <><hr/><button disabled={!flags.canRestore} onClick={() => fire('restore')}>Put Back</button><button disabled={!flags.canDelete} onClick={() => fire('deleteForever')}>Delete Immediately…</button></>}
+      </div>
+    </details>
+    <details name="desktop-menu" className={`${styles.menu} ${styles.finderMenu}`}>
+      <summary>View</summary>
+      <div className={styles.dropdown} onClick={closeMenu}>
+        <button onClick={() => finderCommands.current?.setView('grid')}>{flags.view === 'grid' ? '✓ ' : '   '}as Icons</button>
+        <button onClick={() => finderCommands.current?.setView('list')}>{flags.view === 'list' ? '✓ ' : '   '}as List</button>
+        <hr/><button onClick={() => fire('search')}>Search This Folder</button>
+      </div>
+    </details>
+  </>;
+}
+
+export function MenuBar({ onLogOff, onShutDown, onWidgets }: { onLogOff: () => void; onShutDown: () => void; onWidgets: () => void }) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const dismiss = (event: PointerEvent) => {
@@ -59,13 +95,16 @@ export function MenuBar({ onLogOff, onShutDown }: { onLogOff: () => void; onShut
         </div>
       </details>
       <span className={styles.activeApp}>{active ? APPS[active.appId].label : 'Desktop'}</span>
-      <span className={styles.displayMenu} aria-hidden="true">File</span><span className={styles.displayMenu} aria-hidden="true">Edit</span><span className={styles.displayMenu} aria-hidden="true">View</span>
+      {active?.appId === 'finder' && !active.minimized
+        ? <FinderMenus windowId={active.id}/>
+        : <><span className={styles.displayMenu} aria-hidden="true">File</span><span className={styles.displayMenu} aria-hidden="true">Edit</span><span className={styles.displayMenu} aria-hidden="true">View</span></>}
       <details name="desktop-menu" className={`${styles.menu} ${styles.windowMenu}`}>
         <summary>Window</summary><div className={styles.dropdown} onClick={closeMenu}>{windows.length ? windows.map((w) => <button key={w.id} onClick={() => useWindows.getState().focus(w.id)}>{w.id === activeId ? '\u2713 ' : ''}{w.title}{w.minimized ? ' (minimized)' : ''}</button>) : <span>No open windows</span>}</div>
       </details>
       <button className={styles.help} onClick={() => openApp('welcome')}>Help</button>
     </div>
     <div className={styles.menuRight}>
+      <button className={styles.widgetsButton} onClick={onWidgets} aria-label="Open desktop widgets" aria-haspopup="dialog" title="Desktop widgets"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.5" fill="currentColor"/></svg><span>Widgets</span></button>
       {network.chain.testnet && <span className={styles.testnet} title={`${network.chain.name} (${network.chainId}). Use an injected wallet with test ETH.`}>Testnet</span>}
       <span className={styles.ticker}><PriceTicker/></span><span className={styles.contract}><ContractTrayButton/></span>
       <button className={styles.wallet} onClick={() => connected ? openAccountModal?.() : openConnectModal?.()}><span className={connected ? styles.connected : styles.walletDot}/>{connected ? label : 'Connect Wallet'}</button>

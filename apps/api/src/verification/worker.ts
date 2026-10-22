@@ -107,10 +107,12 @@ export async function postResults({ db, pool, writer, pubsub, now, log }: Pick<W
     .where(and(inArray(subs.status, ['failed', 'rejected']), isNull(subs.txHashResult), lt(subs.attempts, MAX_POST_ATTEMPTS + 1)));
   for (const row of done) {
     try {
-      if ((await pool.status(row.id as Hex)) !== 'Pending') {
-        await db.update(subs).set({ txHashResult: 'none' }).where(eq(subs.id, row.id)); // refunded or already settled
+      const status = await pool.status(row.id as Hex);
+      if (status === 'Failed' || status === 'Refunded') {
+        await db.update(subs).set({ txHashResult: 'none', lastError: null }).where(eq(subs.id, row.id));
         continue;
       }
+      if (status !== 'Pending') throw new Error(`Expected Pending or Failed/Refunded on-chain for a ${row.status} proof; found ${status}. Manual reconciliation required.`);
       const hash = await writer.markFailed(row.id as Hex, row.errorSummary ?? 'failed');
       await db.update(subs).set({ txHashResult: hash, lastError: null }).where(eq(subs.id, row.id));
       posted++;
@@ -122,18 +124,30 @@ export async function postResults({ db, pool, writer, pubsub, now, log }: Pick<W
   const approved = await db.select().from(subs).where(eq(subs.status, 'approved'));
   for (const row of approved) {
     try {
-      const reward = await pool.rewardWei(row.tier!);
-      const hash = await writer.markVerified(row.id as Hex, row.tier!);
+      const status = await pool.status(row.id as Hex);
+      if (status === 'Failed' || status === 'Refunded') {
+        await db.update(subs).set({ status: 'failed', txHashResult: 'none', errorSummary: `Submission was ${status.toLowerCase()} on-chain before approval could be posted.`, lastError: null }).where(eq(subs.id, row.id));
+        continue;
+      }
+      if (status !== 'Pending' && status !== 'Verified') throw new Error(`Expected Pending or Verified on-chain for an approved proof; found ${status}. Manual reconciliation required.`);
+      // Status proves success after a crash, but this reader cannot recover the result receipt or historical payout.
+      const reward = status === 'Pending' ? await pool.rewardWei(row.tier!) : null;
+      const hash = status === 'Pending' ? await writer.markVerified(row.id as Hex, row.tier!) : null;
       const at = now();
-      await db.update(subs).set({ status: 'verified', verifiedAt: at, txHashResult: hash, rewardWei: reward.toString(), lastError: null }).where(eq(subs.id, row.id));
-      const [coin] = await db
-        .update(schema.tokens)
-        .set({ formal: true, formalAt: at })
-        .where(sql`lower(${schema.tokens.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`)
-        .returning({ symbol: schema.tokens.symbol, token: schema.tokens.tokenAddress });
-      log?.(`verified ${row.id.slice(0, 10)}… ($${coin?.symbol ?? '?'}, ${row.tier}) ${hash}`);
-      if (coin) {
-        const callout = await insertSystemCallout(db, {
+      const callout = await db.transaction(async (tx) => {
+        const [settled] = await tx.update(subs).set({
+          status: 'verified', verifiedAt: at, txHashResult: hash, rewardWei: reward?.toString() ?? null,
+          lastError: status === 'Verified' ? 'Reconciled Verified on-chain. Result transaction and paid reward are unknown; payout details require manual reconciliation.' : null,
+        }).where(and(eq(subs.id, row.id), eq(subs.status, 'approved'))).returning({ id: subs.id });
+        if (!settled) return null;
+        const [coin] = await tx
+          .update(schema.tokens)
+          .set({ formal: true, formalAt: at })
+          .where(sql`lower(${schema.tokens.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`)
+          .returning({ symbol: schema.tokens.symbol, token: schema.tokens.tokenAddress });
+        // Do not announce an invented payout when recovering an already-mined result.
+        if (!coin || reward === null) return null;
+        return insertSystemCallout(tx, {
           sourceKey: `formal:${row.id}`,
           text: `🧮 $${coin.symbol} just got FORMAL ✓ — Σ 100 (+${formatEther(reward)} ETH)`,
           tokenAddress: coin.token,
@@ -141,9 +155,10 @@ export async function postResults({ db, pool, writer, pubsub, now, log }: Pick<W
           createdAt: at,
           txHash: hash,
         });
-        if (callout) for (const dto of await presentCallouts(db, [callout], { official: [] })) await pubsub.publish(CALLOUTS_CHANNEL, { type: 'callout', callout: dto });
-      }
-      posted++;
+      });
+      log?.(`${hash ? 'verified' : 'reconciled'} ${row.id.slice(0, 10)}… (${row.tier}) ${hash ?? 'already Verified on-chain'}`);
+      if (callout) for (const dto of await presentCallouts(db, [callout], { official: [] })) await pubsub.publish(CALLOUTS_CHANNEL, { type: 'callout', callout: dto });
+      if (hash) posted++;
     } catch (e) {
       const waiting = e instanceof PoolRevert && e.errorName === 'PoolDepleted';
       await db

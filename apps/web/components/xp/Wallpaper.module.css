@@ -1,0 +1,78 @@
+.wallpaper {
+  --pointer-x: 0px;
+  --pointer-y: 0px;
+  --drift-x: 0px;
+  --drift-y: 0px;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  isolation: isolate;
+  background: #d9749c;
+}
+
+.wallpaper * {
+  pointer-events: none;
+}
+
+.artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.far {
+  transform: translate(
+    calc(var(--pointer-x) * -.3 + var(--drift-x) * .45),
+    calc(var(--pointer-y) * -.3 + var(--drift-y) * .45)
+  );
+}
+
+.middle {
+  transform: translate(
+    calc(var(--pointer-x) * -.65 + var(--drift-x) * .7),
+    calc(var(--pointer-y) * -.65 + var(--drift-y) * .7)
+  );
+}
+
+.near {
+  transform: translate(
+    calc(var(--pointer-x) * -1 + var(--drift-x)),
+    calc(var(--pointer-y) * -1 + var(--drift-y))
+  );
+}
+
+.wallpaper[data-moving] :is(.far, .middle, .near) {
+  will-change: transform;
+}
+
+/* A bounded gradient, not an animated full-screen blur/filter. */
+.glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(260px, 36vw, 620px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe7bd 0%, #ffc18f80 28%, #ffb78a26 48%, #ffb78a00 70%);
+  mix-blend-mode: screen;
+  opacity: var(--glow-opacity, 0);
+  transform: translate3d(calc(var(--glow-x, 0px) - 50%), calc(var(--glow-y, 0px) - 50%), 0);
+}
+
+.wallpaper[data-moving] .glow {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse), (hover: none) {
+  .wallpaper :is(.far, .middle, .near) {
+    transform: none;
+    will-change: auto;
+  }
+
+  .wallpaper .glow {
+    display: none;
+    will-change: auto;
+  }
+}

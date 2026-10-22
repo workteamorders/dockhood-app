@@ -17,7 +17,7 @@ import { useIdentity } from '@/lib/identity';
 import { useLiveCurve, useTradeBalances } from '@/lib/pons/curve';
 import { txErrorMessage } from '@/lib/pons/launch';
 import { withRiskAccepted } from '@/lib/risk';
-import { chain, wagmiConfig } from '@/lib/wagmi';
+import { chain, ensureRpcNetwork, wagmiConfig } from '@/lib/wagmi';
 import styles from './TradePanel.module.css';
 
 type Side = 'buy' | 'sell';
@@ -77,7 +77,21 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
     );
   }
 
-  const decimals = side === 'buy' ? t.pair.decimals : 18;
+  const pairDecimals = t.pair.decimals;
+  if (pairDecimals == null) {
+    return (
+      <div className={styles.panel}>
+        <div className={styles.info}>
+          <WarningIcon size={16} />
+          <p>Trading is unavailable because this pair asset&apos;s decimals are unknown. Quotes and presets are disabled.</p>
+        </div>
+        <Button className={styles.action} disabled>Trading unavailable</Button>
+        <Footer />
+      </div>
+    );
+  }
+
+  const decimals = side === 'buy' ? pairDecimals : 18;
   const unit = side === 'buy' ? t.pair.symbol : `$${symbol}`;
   const amountIn = parseAmount(amount, decimals);
   const slippagePct = Number(slippage);
@@ -104,13 +118,14 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
     const props = { side, pair: t.pair.symbol, hood: t.hood, approval: needsApproval };
     track('trade_submitted', props);
     try {
+      await ensureRpcNetwork();
       if (getAccount(wagmiConfig).chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
       if (needsApproval) {
         const approveToken = side === 'buy' ? pairAddress : tokenAddress;
         setStatus({ kind: 'busy', label: `Approve ${unit} in your wallet…` });
-        const hash = await writeContract(wagmiConfig, { address: approveToken, abi: erc20Abi, functionName: 'approve', args: [curveAddress, amountIn] });
+        const hash = await writeContract(wagmiConfig, { chainId: chain.id, account, address: approveToken, abi: erc20Abi, functionName: 'approve', args: [curveAddress, amountIn] });
         setStatus({ kind: 'busy', label: 'Confirming approval…', hash, approval: true });
-        const r = await waitForTransactionReceipt(wagmiConfig, { hash });
+        const r = await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
         if (r.status !== 'success') throw new Error('The approval failed.');
         await balances.refetch();
       }
@@ -120,6 +135,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
       if (side === 'buy') {
         const minOut = buyQuote ? withSlippage(buyQuote.tokensOut, slippageBps) : 0n;
         const { request } = await simulateContract(wagmiConfig, {
+          chainId: chain.id,
           address: curveAddress,
           abi: ponsCurveAbi,
           functionName: 'buy',
@@ -127,27 +143,28 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
           value: pair?.kind === 'native' ? amountIn : 0n,
           account,
         });
-        hash = await writeContract(wagmiConfig, request);
+        hash = await writeContract(wagmiConfig, { ...request, chainId: chain.id });
       } else {
         const minOut = sellQuote ? withSlippage(sellQuote.quoteOut, slippageBps) : 0n;
         const { request } = await simulateContract(wagmiConfig, {
+          chainId: chain.id,
           address: curveAddress,
           abi: ponsCurveAbi,
           functionName: 'sell',
           args: [amountIn, minOut, account],
           account,
         });
-        hash = await writeContract(wagmiConfig, request);
+        hash = await writeContract(wagmiConfig, { ...request, chainId: chain.id });
       }
 
       setStatus({ kind: 'busy', label: 'Confirming on Robinhood Chain…', hash });
-      const receipt = await waitForTransactionReceipt(wagmiConfig, { hash });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
       if (receipt.status !== 'success') throw new Error('The trade reverted on-chain.');
       const logs = receipt.logs.filter((l) => l.address.toLowerCase() === curveAddress.toLowerCase());
       const text =
         side === 'buy'
           ? `Bought ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveBuy', logs })[0]?.args.tokensOut ?? 0n, 18, { compact: true })} $${symbol}.`
-          : `Sold for ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveSell', logs })[0]?.args.quoteOut ?? 0n, t.pair.decimals)} ${t.pair.symbol}.`;
+          : `Sold for ${formatAmount(parseEventLogs({ abi: ponsCurveAbi, eventName: 'CurveSell', logs })[0]?.args.quoteOut ?? 0n, pairDecimals)} ${t.pair.symbol}.`;
       setStatus({ kind: 'done', text, hash });
       track('trade_confirmed', props);
       setAmount('');
@@ -211,7 +228,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
       </div>
       <div className={styles.presets}>
         {side === 'buy'
-          ? buyPresets(pair ?? { address: pairAddress, symbol: t.pair.symbol, name: '', decimals: t.pair.decimals, kind: 'other' }).map((v) => (
+          ? buyPresets(pair ?? { address: pairAddress, symbol: t.pair.symbol, name: '', decimals: pairDecimals, kind: 'other' }).map((v) => (
               <Button key={v} onClick={() => setAmount(v)} disabled={busy}>
                 {v}
               </Button>
@@ -235,7 +252,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
           <div>
             <dt>You receive</dt>
             <dd>
-              ≈ {buyQuote ? `${formatAmount(buyQuote.tokensOut, 18, { compact: true })} $${symbol}` : `${formatAmount(sellQuote!.quoteOut, t.pair.decimals)} ${t.pair.symbol}`}
+              ≈ {buyQuote ? `${formatAmount(buyQuote.tokensOut, 18, { compact: true })} $${symbol}` : `${formatAmount(sellQuote!.quoteOut, pairDecimals)} ${t.pair.symbol}`}
             </dd>
           </div>
           <div>
@@ -243,7 +260,7 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
             <dd>
               {buyQuote
                 ? `${formatAmount(withSlippage(buyQuote.tokensOut, slippageBps), 18, { compact: true })} $${symbol}`
-                : `${formatAmount(withSlippage(sellQuote!.quoteOut, slippageBps), t.pair.decimals)} ${t.pair.symbol}`}
+                : `${formatAmount(withSlippage(sellQuote!.quoteOut, slippageBps), pairDecimals)} ${t.pair.symbol}`}
             </dd>
           </div>
           <div>
@@ -253,14 +270,14 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
           <div>
             <dt>Trade fee ({formatBps(state!.feeBps)})</dt>
             <dd>
-              {formatAmount((buyQuote ?? sellQuote)!.fee, t.pair.decimals)} {t.pair.symbol}
+              {formatAmount((buyQuote ?? sellQuote)!.fee, pairDecimals)} {t.pair.symbol}
             </dd>
           </div>
           {state!.creatorTaxBps > 0n && (
             <div>
               <dt>Creator tax ({formatBps(state!.creatorTaxBps)})</dt>
               <dd>
-                {formatAmount((buyQuote ?? sellQuote)!.creatorTax, t.pair.decimals)} {t.pair.symbol}
+                {formatAmount((buyQuote ?? sellQuote)!.creatorTax, pairDecimals)} {t.pair.symbol}
               </dd>
             </div>
           )}
@@ -268,13 +285,13 @@ export function TradePanel({ token: t, paused = false }: { token: TokenDetail; p
             <div>
               <dt>Snipe tax ({formatBps(snipe)})</dt>
               <dd className={styles.warn}>
-                {formatAmount(buyQuote.snipeTax, t.pair.decimals)} {t.pair.symbol}
+                {formatAmount(buyQuote.snipeTax, pairDecimals)} {t.pair.symbol}
               </dd>
             </div>
           )}
           {buyQuote?.completesCurve && (
             <p className={styles.note}>
-              This buy finishes the curve; {formatAmount(buyQuote.refund, t.pair.decimals)} {t.pair.symbol} comes back.
+              This buy finishes the curve; {formatAmount(buyQuote.refund, pairDecimals)} {t.pair.symbol} comes back.
             </p>
           )}
         </dl>

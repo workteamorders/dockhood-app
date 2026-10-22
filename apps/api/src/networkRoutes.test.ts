@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { parseEther, type Address } from 'viem';
 import { HEXE_TOKEN, NATIVE_PAIR, PUBLIC_RPC_TESTNET } from '@hood/shared';
 import { newGame, PRESETS, reveal, type RankedMove } from '@hood/shared/minesweeper';
 import { schema } from './db';
-import type { EnvioClient } from './services/envio';
+import { envioClient, type EnvioClient } from './services/envio';
+import { loadEnv } from './env';
 import { alice, setup, signIn, siweMessage } from './test/helpers';
 
 const addr = (n: number) => `0x${n.toString(16).padStart(40, '0')}` as Address;
@@ -35,14 +37,14 @@ describe('testnet API routes', { timeout: 30_000 }, () => {
     expect(fetchMock.mock.calls[0][0]).toBe(PUBLIC_RPC_TESTNET);
   });
 
-  it('uses configured pair metadata for tokens, candles, trades and portfolios', async () => {
+  it.each([true, false])('values a six-decimal pair only with catalog metadata (configured=%s)', async (configured) => {
     const pair = { address: addr(13), symbol: 'TUSD', name: 'Test USD', decimals: 6, kind: 'stable' };
     const envio = {
       walletPositions: async () => [{ token: addr(1), qty: parseEther('1'), cost: 1_000_000n }],
       candles: async () => [{ bucketStart: 300, open: '2e-12', high: '2e-12', low: '2e-12', close: '2e-12', volumeQuote: 3_000_000n, trades: 1 }],
       trades: async () => [{ id: '1', trader: alice.address, isBuy: true, quoteAmount: 2_000_000n, tokenAmount: parseEther('1'), price: '2e-12', timestamp: 1, txHash: '0x1' }],
     } as unknown as EnvioClient;
-    ctx = await setup({ env: { ...env, PAIR_TOKENS_JSON: JSON.stringify([pair]) }, envio });
+    ctx = await setup({ env: { ...env, ...(configured ? { PAIR_TOKENS_JSON: JSON.stringify([pair]) } : {}) }, envio });
     await ctx.db.insert(schema.tokens).values({
       tokenAddress: addr(1), curveAddress: addr(2), deployer: alice.address, pairToken: pair.address,
       blockNumber: 1, launchedAt: ctx.now(), name: 'Test coin', symbol: 'TEST', logo: '', description: '',
@@ -55,14 +57,71 @@ describe('testnet API routes', { timeout: 30_000 }, () => {
       expect(response.statusCode).toBe(200);
       return response.json();
     };
-    const metadata = { address: pair.address, symbol: 'TUSD', decimals: 6 };
-    expect((await get('/tokens')).items[0]).toMatchObject({ pair: metadata, price: 2, volume24h: 3 });
-    expect(await get(`/tokens/${addr(1)}`)).toMatchObject({ pair: metadata, price: 2 });
-    expect((await get(`/tokens/${addr(1)}/candles`)).candles[0]).toMatchObject({ open: 2, close: 2, volume: 3 });
-    expect((await get(`/tokens/${addr(1)}/trades`)).trades[0]).toMatchObject({ quote: 2, tokens: 1, price: 2 });
+    const metadata = { address: pair.address, symbol: configured ? 'TUSD' : '?', decimals: configured ? 6 : null };
+    const price = configured ? 2 : null;
+    expect((await get('/tokens')).items[0]).toMatchObject({ pair: metadata, price, marketCap: configured ? 2e9 : null, volume24h: configured ? 3 : null, progress: 0.5 });
+    expect(await get(`/tokens/${addr(1)}`)).toMatchObject({ pair: metadata, price });
+    expect((await get(`/tokens/${addr(1)}/candles`)).candles[0]).toMatchObject({ open: price, high: price, low: price, close: price, volume: configured ? 3 : null });
+    expect((await get(`/tokens/${addr(1)}/trades`)).trades[0]).toMatchObject({ quote: price, tokens: 1, price });
     const portfolio = await get(`/portfolio/${alice.address}`);
-    expect(portfolio.holdings[0]).toMatchObject({ pair: metadata, price: 2, value: 2, costBasis: 1, pnl: 1 });
-    expect(portfolio.launches[0]).toMatchObject({ pair: metadata, price: 2 });
+    expect(portfolio.holdings[0]).toMatchObject({ pair: metadata, balance: 1, price, value: price, costBasis: configured ? 1 : null, pnl: configured ? 1 : null, pnlPct: configured ? 100 : null });
+    expect(portfolio.launches[0]).toMatchObject({ pair: metadata, price });
+  });
+
+  it('serves non-indexer routes while Envio is offline or unready, then recovers gated reads', async () => {
+    const network = loadEnv({ DATABASE_URL: 'memory', ...env }).network;
+    let head: number | null = null;
+    let offline = true;
+    const queries: string[] = [];
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+      const { query } = JSON.parse(init.body as string);
+      queries.push(query);
+      if (offline) return new Response('', { status: 503 });
+      const data = query.includes('chain_metadata') ? { chain_metadata: [{ chain_id: network.chainId, latest_processed_block: head }] } : { Trade: [] };
+      return new Response(JSON.stringify({ data }));
+    });
+    ctx = await setup({ env, envio: envioClient('http://envio.test', network) });
+    await ctx.db.insert(schema.tokens).values({
+      tokenAddress: addr(1), curveAddress: addr(2), deployer: alice.address, pairToken: NATIVE_PAIR,
+      blockNumber: 1, launchedAt: ctx.now(), name: 'Test', symbol: 'TEST', logo: '', description: '', graduationThreshold: '1',
+    });
+    for (const url of ['/health', '/tokens', '/auth/siwe']) {
+      expect((await ctx.app.inject({ method: 'GET', url })).statusCode).toBe(200);
+    }
+    expect(queries).toEqual([]);
+    const trades = () => ctx!.app.inject({ method: 'GET', url: `/tokens/${addr(1)}/trades` });
+    expect((await trades()).statusCode).toBe(503);
+    offline = false;
+    expect((await trades()).statusCode).toBe(503);
+    expect(queries.every((query) => query.includes('chain_metadata'))).toBe(true);
+    head = 10;
+    expect((await trades()).json()).toEqual({ trades: [] });
+    expect(queries.filter((query) => !query.includes('chain_metadata'))).toHaveLength(1);
+  });
+
+  it.each([false, true])('scopes the DOCK search and callout alias to the official address (configured=%s)', async (configured) => {
+    ctx = await setup({ env: { ...env, ...(configured ? { OFFICIAL_TOKEN_ADDRESS: addr(30) } : {}) } });
+    const values = { curveAddress: addr(2), deployer: alice.address, pairToken: NATIVE_PAIR, launchedAt: ctx.now(), logo: '', description: '', graduationThreshold: '1' };
+    await ctx.db.insert(schema.tokens).values([
+      { ...values, tokenAddress: addr(30), name: 'Legacy token', symbol: 'HEXE', blockNumber: 1, hood: false },
+      { ...values, tokenAddress: addr(31), name: 'Unrelated token', symbol: 'DOCK', blockNumber: 100, hood: true },
+    ]);
+    const search = async (text: string) => (await ctx!.app.inject({ method: 'GET', url: `/tokens?q=${encodeURIComponent(text)}` })).json().items;
+    const matches = await search('$dOcK');
+    expect(matches.map((item: { token: string }) => item.token)).toEqual(configured ? [addr(30)] : [addr(31)]);
+    expect(matches[0].symbol).toBe(configured ? 'HEXE' : 'DOCK');
+    expect((await search('HEXE'))[0]).toMatchObject({ token: addr(30), symbol: 'HEXE' });
+    expect((await search('do'))[0].token).toBe(configured ? addr(30) : addr(31));
+    const cookie = await signIn(ctx);
+    const response = await ctx.app.inject({ method: 'POST', url: '/callouts', headers: { cookie }, payload: { text: '$dOcK looks good' } });
+    expect(response.statusCode).toBe(201);
+    expect(response.json().callout).toMatchObject({ tokenAddress: configured ? addr(30) : addr(31), ticker: 'DOCK' });
+    if (configured) {
+      await ctx.db.delete(schema.tokens).where(eq(schema.tokens.tokenAddress, addr(30)));
+      expect(await search('DOCK')).toEqual([]);
+      const missing = await ctx.app.inject({ method: 'POST', url: '/callouts', headers: { cookie }, payload: { text: '$DOCK is not indexed' } });
+      expect(missing.json().callout).toMatchObject({ tokenAddress: null, ticker: null });
+    }
   });
 
   it.each([false, true])('only badges holders of a configured official token (configured=%s)', async (configured) => {

@@ -59,4 +59,26 @@ describe('selected-chain wagmi configuration', () => {
       expect.objectContaining({ appName: 'Dockhood' }),
     );
   });
+
+  it.each(['https://rpc.example.test', '/api/rpc'])('checks the effective %s endpoint before testnet reads or wallet flows', async (rpcUrl) => {
+    vi.stubEnv('NEXT_PUBLIC_CHAIN_ID', '46630');
+    vi.stubEnv('NEXT_PUBLIC_RPC_URL', rpcUrl);
+    vi.stubEnv('NEXT_PUBLIC_PONS_LAUNCH_FACTORY', '0x1111111111111111111111111111111111111111');
+    vi.stubEnv('NEXT_PUBLIC_PONS_LAUNCH_AND_BUY', '0x2222222222222222222222222222222222222222');
+    vi.stubGlobal('window', Object.assign(new EventTarget(), {
+      location: { origin: 'https://dockhood.example' },
+      localStorage: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
+    }));
+    const fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string);
+      expect(body.method).toBe('eth_chainId');
+      return Response.json({ jsonrpc: '2.0', id: body.id, result: '0x1237' });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const { wagmiConfig, ensureRpcNetwork } = await import('./wagmi');
+    await expect(ensureRpcNetwork()).rejects.toThrow('RPC network mismatch');
+    await expect(wagmiConfig.getClient().request({ method: 'eth_call', params: [{}, 'latest'] })).rejects.toThrow('RPC network mismatch');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(fetch.mock.calls[0][0])).toBe(new URL(rpcUrl, 'https://dockhood.example').href);
+  });
 });

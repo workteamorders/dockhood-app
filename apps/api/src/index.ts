@@ -19,7 +19,6 @@ await assertRpcChain(network);
 // Unscoped token/trade queries require a single-chain indexer matching this deployment.
 // Envio's 100 queries/minute: 40 for this index, 20 for visitors, 20 for the worker.
 const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, network, 1_000, { background: 40, interactive: 20 }) : undefined;
-if (envio) await envio.latestBlock();
 const rpcSource = rpcLaunchSource(network);
 const { db, close: closeDb } = await connectPostgres(env.DATABASE_URL);
 // family 0: Railway private hostnames may resolve to IPv6 only.

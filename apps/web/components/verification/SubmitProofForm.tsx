@@ -13,7 +13,7 @@ import { confirmProofSubmission, fetchToken, fetchTokens, prepareProof, type Pre
 import { useIdentity } from '@/lib/identity';
 import { displayTicker } from '@/lib/hoodToken';
 import { ensureSession } from '@/lib/siwe';
-import { chain, wagmiConfig } from '@/lib/wagmi';
+import { chain, ensureRpcNetwork, wagmiConfig } from '@/lib/wagmi';
 import styles from './verification.module.css';
 
 type Coin = { token: string; symbol: string; statement: string | null; formal: boolean };
@@ -65,6 +65,11 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
   const [error, setError] = useState<string | null>(null);
 
   const fee = BigInt(prepared?.submissionFee ?? config.submissionFeeWei);
+  const pick = (c: Coin | null) => {
+    setPicked(c);
+    setPrepared(null);
+    setError(null);
+  };
   const choose = async (f: File | null) => {
     setFile(f);
     setPrepared(null);
@@ -75,8 +80,9 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
     setProblems(screenProof(await f.text()));
   };
 
+  const canPrepare = !!coin && !coin.formal && !!file && file.size <= config.maxProofBytes && !problems.length && !busy && connected;
   const prepare = async () => {
-    if (!coin || !file || !address) return;
+    if (!canPrepare || !coin || !file || !address) return;
     setError(null);
     try {
       setBusy('Signing in…');
@@ -94,11 +100,12 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
     if (!prepared || !coin) return;
     setError(null);
     try {
-      if (getAccount(wagmiConfig).chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
       setBusy('Confirm the transaction in your wallet…');
-      const hash = await sendTransaction(wagmiConfig, { to: prepared.txData.to as Address, data: prepared.txData.data as Hex, value: BigInt(prepared.txData.value) });
+      await ensureRpcNetwork();
+      if (getAccount(wagmiConfig).chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
+      const hash = await sendTransaction(wagmiConfig, { chainId: chain.id, to: prepared.txData.to as Address, data: prepared.txData.data as Hex, value: BigInt(prepared.txData.value) });
       setBusy('Waiting for the transaction…');
-      const receipt = await waitForTransactionReceipt(wagmiConfig, { hash });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
       if (receipt.status !== 'success') throw new Error('The transaction failed: the fee was not taken.');
       setBusy('Adding it to the queue…');
       for (let i = 0; i < 10; i++) {
@@ -117,7 +124,6 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
     }
   };
 
-  const canPrepare = !!coin && !coin.formal && !!file && !problems.length && !busy && connected;
   return (
     <Dialog
       title="Submit Formal Proof"
@@ -140,13 +146,13 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
     >
       <div className={styles.form}>
         {!coin ? (
-          token && given.isPending ? <p className={styles.note}>Loading the coin…</p> : <CoinPicker onPick={setPicked} />
+          token && given.isPending ? <p className={styles.note}>Loading the coin…</p> : <CoinPicker onPick={pick} />
         ) : (
           <div className={styles.field}>
             <span className={styles.label}>
               Coin: <b>${displayTicker(coin.token, coin.symbol)}</b>{' '}
               {!token && (
-                <button type="button" className={styles.linkBtn} onClick={() => setPicked(null)}>
+                <button type="button" className={styles.linkBtn} disabled={!!busy} onClick={() => pick(null)}>
                   change
                 </button>
               )}
@@ -159,7 +165,7 @@ export function SubmitProofForm({ config, token, onClose, onSubmitted }: { confi
 
         <label className={styles.field}>
           <span className={styles.label}>Upload proof.lean (max {Math.round(config.maxProofBytes / 1024 / 1024)} MB):</span>
-          <input type="file" accept=".lean,text/plain" onChange={(e) => void choose(e.target.files?.[0] ?? null)} />
+          <input type="file" accept=".lean,text/plain" disabled={!!busy} onChange={(e) => void choose(e.target.files?.[0] ?? null)} />
         </label>
         {problems.length > 0 && (
           <ul className={styles.problems}>

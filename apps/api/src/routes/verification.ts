@@ -158,6 +158,7 @@ export async function verificationRoutes(app: FastifyInstance) {
 
   app.post('/verification/prepare', { preHandler: app.requireSession }, async (req) => {
     if (!(await enabled()) || !pool) throw new HttpError(503, 'Proof submissions are closed right now.');
+    if (env.NODE_ENV === 'production' && !env.PINATA_JWT) throw new HttpError(503, 'Proof uploads are paused while IPFS storage is being set up.');
     const wallet = req.wallet!;
     if (!(await allow(kv, `verify-prepare:${wallet}`, 20, 86_400))) throw new HttpError(429, 'Too many uploads today. Try again tomorrow.');
 
@@ -172,7 +173,12 @@ export async function verificationRoutes(app: FastifyInstance) {
     }
     if (!tokenAddress || !isAddress(tokenAddress, { strict: false })) throw new HttpError(400, 'Choose the coin this proof is for.');
     if (!file?.length) throw new HttpError(400, 'Attach your proof.lean file.');
-    const source = new TextDecoder('utf-8', { fatal: true }).decode(file, { stream: false });
+    let source: string;
+    try {
+      source = new TextDecoder('utf-8', { fatal: true }).decode(file, { stream: false });
+    } catch {
+      throw new HttpError(400, 'The proof file must be valid UTF-8 text.');
+    }
 
     const [coin] = await db
       .select({ token: schema.tokens.tokenAddress, hood: schema.tokens.hood, statement: schema.tokens.statement, formal: schema.tokens.formal })
@@ -321,29 +327,31 @@ export async function verificationRoutes(app: FastifyInstance) {
       .object({ id: z.string().refine((h) => isHash(h)), decision: z.enum(['approve', 'reject']), tier: z.enum(TIERS).optional(), note: z.string().max(500).optional() })
       .refine((b) => b.decision === 'reject' || !!b.tier, 'Choose a tier to approve.')
       .parse(req.body);
-    const [row] = await db.select().from(subs).where(eq(subs.id, body.id)).limit(1);
-    if (!row) throw new HttpError(404, 'No such submission.');
-    if (row.status !== 'passed') throw new HttpError(409, `Only proofs that passed the checker can be reviewed (this one is ${row.status}).`);
-    if (body.decision === 'approve') {
-      // One reward per coin: the contract pays whatever the bot signs, so a copied proof (one comment changed, a new
-      // hash) would otherwise be paid a second time.
-      const sameCoin = sql`lower(${subs.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`;
-      const [first] = await db.select({ id: subs.id }).from(subs).where(and(sameCoin, inArray(subs.status, ['approved', 'verified']))).limit(1);
-      const [coin] = await db.select({ formal: schema.tokens.formal }).from(schema.tokens).where(sql`lower(${schema.tokens.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`).limit(1);
-      if (first || coin?.formal) throw new HttpError(409, 'This coin already has an approved proof. Reject this one.');
-    }
-    const reviewed = { reviewedBy: req.wallet, reviewedAt: now(), reviewNote: body.note ?? null };
-    const [updated] = await db
-      .update(subs)
-      .set(
-        body.decision === 'approve'
-          ? { ...reviewed, status: 'approved', tier: body.tier!, adminTierOverride: body.tier !== row.suggestedTier, lastError: null }
-          : { ...reviewed, status: 'rejected', errorSummary: `Review: ${body.note?.trim() || "the proof doesn't prove this coin's theorem."}` },
-      )
-      .where(and(eq(subs.id, body.id), eq(subs.status, 'passed')))
-      .returning({ status: subs.status, tier: subs.tier });
-    if (!updated) throw new HttpError(409, 'Someone reviewed this proof a moment ago.');
-    return updated;
+    return db.transaction(async (tx) => {
+      const [row] = await tx.select().from(subs).where(eq(subs.id, body.id)).limit(1);
+      if (!row) throw new HttpError(404, 'No such submission.');
+      if (row.status !== 'passed') throw new HttpError(409, `Only proofs that passed the checker can be reviewed (this one is ${row.status}).`);
+      if (body.decision === 'approve') {
+        // Serialize approvals per coin across API processes, including differently cased addresses.
+        await tx.execute(sql`select pg_advisory_xact_lock(7667, hashtext(${row.tokenAddress.toLowerCase()}))`);
+        const sameCoin = sql`lower(${subs.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`;
+        const [first] = await tx.select({ id: subs.id }).from(subs).where(and(sameCoin, inArray(subs.status, ['approved', 'verified']))).limit(1);
+        const [coin] = await tx.select({ formal: schema.tokens.formal }).from(schema.tokens).where(sql`lower(${schema.tokens.tokenAddress}) = ${row.tokenAddress.toLowerCase()}`).limit(1);
+        if (first || coin?.formal) throw new HttpError(409, 'This coin already has an approved proof. Reject this one.');
+      }
+      const reviewed = { reviewedBy: req.wallet, reviewedAt: now(), reviewNote: body.note ?? null };
+      const [updated] = await tx
+        .update(subs)
+        .set(
+          body.decision === 'approve'
+            ? { ...reviewed, status: 'approved', tier: body.tier!, adminTierOverride: body.tier !== row.suggestedTier, lastError: null }
+            : { ...reviewed, status: 'rejected', errorSummary: `Review: ${body.note?.trim() || "the proof doesn't prove this coin's theorem."}` },
+        )
+        .where(and(eq(subs.id, body.id), eq(subs.status, 'passed')))
+        .returning({ status: subs.status, tier: subs.tier });
+      if (!updated) throw new HttpError(409, 'Someone reviewed this proof a moment ago.');
+      return updated;
+    });
   });
 
   app.post('/verification/admin/pause', { preHandler: app.requireSession }, async (req) => {
@@ -356,5 +364,4 @@ export async function verificationRoutes(app: FastifyInstance) {
     return { paused };
   });
 }
-
 

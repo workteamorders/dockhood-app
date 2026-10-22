@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import {
   CalloutsIcon,
   ExploreIcon,
+  FinderIcon,
   GamesFolderIcon,
   HelpIcon,
   InfoIcon,
@@ -17,7 +18,7 @@ import {
   type IconProps,
 } from '@/components/mac/AppIcon';
 
-export type AppId = 'welcome' | 'launch' | 'explore' | 'callouts' | 'portfolio' | 'theorem' | 'about' | 'recycle' | 'token' | 'terms' | 'risk' | 'privacy' | 'games' | 'solitaire' | 'minesweeper' | 'verification' | 'verificationAdmin';
+export type AppId = 'welcome' | 'finder' | 'launch' | 'explore' | 'callouts' | 'portfolio' | 'theorem' | 'about' | 'recycle' | 'token' | 'terms' | 'risk' | 'privacy' | 'games' | 'solitaire' | 'minesweeper' | 'verification' | 'verificationAdmin';
 
 export type AppMeta = {
   id: AppId;
@@ -42,6 +43,15 @@ export const APPS: Record<AppId, AppMeta> = {
     Icon: HelpIcon,
     w: 660,
     h: 600,
+  },
+  finder: {
+    id: 'finder',
+    title: 'Finder',
+    label: 'Finder',
+    description: 'Browse local text and image files',
+    Icon: FinderIcon,
+    w: 900,
+    h: 580,
   },
   launch: {
     id: 'launch',

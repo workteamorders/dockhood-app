@@ -73,33 +73,41 @@ Run it under systemd or pm2 so it restarts. Submissions stay closed until the AP
 
 ## Running it end to end locally
 
-Submit → check → admin review → payout → registry flag, on a local chain with anvil's test keys. Never use a real
-key here. Needs Docker (Postgres and Redis from `docker compose up -d`, and the verifier image) and Foundry.
+Submit → check → admin review → payout → registry flag, using real Docker Lean containers, API, worker and an
+owned, unforked Anvil. This is a **synthetic theorem coin / proof-pipeline test, not a real Pons launch**.
 
 ```bash
-# 1. A chain with Robinhood's id: the bot signs for chain 4663, so the contract only accepts it there.
-anvil --chain-id 4663
-
-# 2. Deploy (anvil account 0 owns; the bot is set after step 3 prints its address; the operator is any address).
-cd apps/contracts
-OWNER=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 VERIFIER_BOT=<any> OPERATOR=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC \
-  forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast \
-  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-
-# 3. An env file for the API and the worker (DATABASE_URL, REDIS_URL, RPC_URL_SERVER=http://127.0.0.1:8545,
-#    VERIFICATION_SUBMISSIONS_ENABLED=true, the three contract addresses from step 2, ADMIN_WALLETS=<account 0>,
-#    VERIFIER_IMAGE, STAND_INS=allow). Start the API and the worker with a throwaway VERIFIER_BOT_PRIVATE_KEY:
-cd apps/api
-npx tsx --env-file=e2e.env src/index.ts
-VERIFIER_BOT_PRIVATE_KEY=0x… npx tsx --env-file=e2e.env src/verifierWorker.ts   # prints "bot 0x…"
-
-# 4. Make that address the pool's bot, and give it gas.
-cast send <pool> "setVerifierBot(address)" <bot> --rpc-url http://127.0.0.1:8545 --private-key <account 0 key>
-cast send <bot> --value 1ether --rpc-url http://127.0.0.1:8545 --private-key <account 0 key>
-
-# 5. Run the flow (a fresh coin and proof each time):
-npx tsx --env-file=e2e.env scripts/verify-e2e.ts
+# From the repository root, after pnpm install and building hoodexe/verifier:latest:
+docker compose -f docker-compose.testnet.yml up -d postgres
+# Requires .testnet/tools/bin/anvil and compiled apps/contracts/out artifacts.
+pnpm --filter @hood/api verify:local
 ```
+
+The runner refuses occupied ports; it never attaches to an existing Anvil/API. It owns Anvil on
+`127.0.0.1:18546`, chain 4663 (the same numeric ID as mainnet, so **ID alone is not a safety check**), checks the
+listener PID, Anvil client and fresh unforked state, then deploys and wires RigorRegistry, VerificationPool and
+FeeSplitter from real Forge artifacts. Default local accounts 0/1/3 are owner/verifier/submitter, each already funded.
+`scripts/verify-e2e.ts` runs unchanged in its flow against `http://localhost:18787`, with SIWE's
+`http://localhost:3000` CORS origin. Its standalone loopback and chain-ID checks remain in place.
+
+No application env is inherited, no env files or `.testnet/secrets` are read, and no key is passed in CLI arguments.
+The bot key is injected only into the worker's memory environment, never the API. Postgres must be the dedicated
+testnet container bound to `127.0.0.1:54321`; a unique `hood_verification_e2e_*` database is created for each run.
+Existing databases are not migrated or overwritten. In-memory KV/pubsub avoids Redis state changes.
+
+The worker uses concurrency 1, 4096 MB RAM, no swap and a 120-second compile timeout. Each proof still uses two
+sequential, isolated containers. `VERIFICATION_WORK_DIR` is an optional worker setting; here it points to a unique
+absolute subdirectory of `<repo>/.testnet/sandbox`, which Colima must mount. Allow about 8 GB for Colima.
+
+Sanitized logs, transaction receipts, inspected sandbox settings, review/theorem evidence, exact gas-adjusted payout
+and registry assertions are written under `.testnet/local-verification/<unique>/`. The runner stops only its own
+children and removes only containers mounted under its unique work directory, on success, failure or SIGINT/SIGTERM.
+The isolated database is retained for inspection (it includes local SIWE sessions; no database dump is written).
+After inspection, an individual run database can be removed explicitly with
+`docker exec dockhood-testnet-postgres-1 dropdb -U hood <database-from-report>`.
+
+The report does not test public infrastructure, IPFS publication, a frontend/browser, Pons launches or FeeSplitter
+income distribution. Public funding/broadcast remains zero. Avoid SIGKILL, which cannot run cleanup.
 
 ## Testing it locally
 

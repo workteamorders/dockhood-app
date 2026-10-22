@@ -9,6 +9,7 @@ import { isAddress } from 'viem';
 import { openApp, openToken } from '@/lib/openApp';
 import { useTray } from '@/store/tray';
 import { useWindows } from '@/store/windows';
+import { useStartup } from '@/store/startup';
 import { DesktopIcons, type DesktopItemId } from './DesktopIcons';
 import { MessageBox } from './Dialog';
 import { BOOT_MS, BootScreen, WELCOME_MS, WelcomeScreen } from './Boot';
@@ -16,6 +17,7 @@ import { LogOffDialog, OffScreen, ShutDownDialog } from './Power';
 import { Dock } from '../mac/Dock';
 import { MenuBar } from '../mac/MenuBar';
 import { Launchpad } from '../mac/Launchpad';
+import { DesktopWidgets } from '../mac/DesktopWidgets';
 import { Balloons } from './Balloons';
 import { RiskDialog } from './RiskDialog';
 import { Wallpaper } from './Wallpaper';
@@ -29,10 +31,12 @@ export function Desktop() {
   const activeId = useWindows((s) => s.activeId);
   const closeAll = useWindows((s) => s.closeAll);
   const unread = useTray((s) => s.unread);
+  const startupDone = useStartup((s) => s.done);
   const { disconnect } = useDisconnect();
 
   const [selected, setSelected] = useState<DesktopItemId | null>(null);
   const [overlay, setOverlay] = useState<Overlay>(null);
+  const [widgetsOpen, setWidgetsOpen] = useState(false);
 
   // First load: open the coin in /t/0x… or the app named in ?app=, else Welcome.
   useEffect(() => {
@@ -67,6 +71,7 @@ export function Desktop() {
 
   const closeGames = useCallback(() => useWindows.getState().close('games'), []);
   const cancelOverlay = useCallback(() => setOverlay(null), []);
+  const closeWidgets = useCallback(() => setWidgetsOpen(false), []);
 
   useEffect(() => {
     const fitWindows = () => {
@@ -100,8 +105,8 @@ export function Desktop() {
 
   return (
     <div data-desktop className={`${styles.desktop} ${grayscale ? styles.grayscale : ''}`}>
-      <Wallpaper />
-      <MenuBar onLogOff={() => setOverlay('logoff')} onShutDown={() => setOverlay('shutdown')} />
+      <Wallpaper interactive={startupDone && !overlay && !games} />
+      <MenuBar onLogOff={() => setOverlay('logoff')} onShutDown={() => setOverlay('shutdown')} onWidgets={() => setWidgetsOpen(true)} />
       <main
         className={styles.workspace}
         data-workspace
@@ -112,6 +117,7 @@ export function Desktop() {
         }}
       >
         <DesktopIcons selected={selected} onSelect={setSelected} />
+        {startupDone && !overlay && !games && <DesktopWidgets open={widgetsOpen} onClose={closeWidgets} covered={windows.some((win) => win.maximized && !win.minimized)} />}
         {windows.map((win) => {
           if (win.appId === 'games') return null;
           const app = APPS[win.appId];

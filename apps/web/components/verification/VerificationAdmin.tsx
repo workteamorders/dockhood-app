@@ -12,7 +12,7 @@ import { fetchVerificationAdmin, fetchVerificationConfig, reviewVerification, se
 import { useIdentity } from '@/lib/identity';
 import { displayTicker } from '@/lib/hoodToken';
 import { ensureSession } from '@/lib/siwe';
-import { chain, wagmiConfig } from '@/lib/wagmi';
+import { chain, ensureRpcNetwork, wagmiConfig } from '@/lib/wagmi';
 import { duration } from './format';
 import { ProofViewer } from './ProofViewer';
 import styles from './verification.module.css';
@@ -40,9 +40,10 @@ function FeeSplitControl({ address }: { address: Address }) {
     setBusy(true);
     setError(null);
     try {
+      await ensureRpcNetwork();
       if (getAccount(wagmiConfig).chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
-      const hash = await writeContract(wagmiConfig, { address, abi: feeSplitterAbi, functionName: 'setPoolBps', args: [value] });
-      await waitForTransactionReceipt(wagmiConfig, { hash });
+      const hash = await writeContract(wagmiConfig, { chainId: chain.id, address, abi: feeSplitterAbi, functionName: 'setPoolBps', args: [value] });
+      await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
       setPercent('');
       await bps.refetch();
     } catch (e) {
@@ -161,9 +162,10 @@ export function VerificationAdmin() {
     run(fn, async () => {
       const pool = overview.data?.pool.address as Address | undefined;
       if (!pool) throw new Error('No pool is configured.');
+      await ensureRpcNetwork();
       if (getAccount(wagmiConfig).chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
-      const hash = await writeContract(wagmiConfig, { address: pool, abi: poolOwnerAbi, functionName: fn });
-      await waitForTransactionReceipt(wagmiConfig, { hash });
+      const hash = await writeContract(wagmiConfig, { chainId: chain.id, address: pool, abi: poolOwnerAbi, functionName: fn });
+      await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
     });
 
   if (!connected) return <p className={styles.empty}>Connect an admin wallet.</p>;

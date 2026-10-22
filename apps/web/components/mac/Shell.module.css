@@ -1,13 +1,16 @@
 .menuBar { position: absolute; top: 0; left: 0; right: 0; height: var(--menubar-h); z-index: 8200; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 18px; background: rgba(255,255,255,.52); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); border-bottom: 1px solid rgba(255,255,255,.18); color: #29202b; font-size: 11px; }
 .menuLeft, .menuRight { display: flex; align-items: center; gap: 18px; min-width: 0; height: 100%; }
 .menuRight { gap: 14px; }
+.widgetsButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: stretch; padding: 0 5px; border: 0; border-radius: 5px; background: none; color: inherit; font-size: 10px; white-space: nowrap; }
+.widgetsButton:hover { background: #ffffff50; }
+@media (max-width: 1100px) { .widgetsButton > span { display: none; } }
 .menu { position: relative; }
 .menu summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; white-space: nowrap; }
 .menu summary::-webkit-details-marker { display: none; }
 .menu summary strong { font-weight: 700; }
 .dropdown { position: absolute; top: calc(100% + 7px); left: -8px; width: max-content; min-width: 210px; max-width: 300px; padding: 6px; border: 1px solid var(--glass-border); border-radius: 9px; background: rgba(252,249,253,.97); box-shadow: 0 12px 36px #28142a30; backdrop-filter: blur(32px) saturate(180%); }
 .dropdown button, .dropdown > span { display: block; width: 100%; padding: 7px 10px; background: none; border: 0; border-radius: 5px; text-align: left; font-size: 12px; }
-.dropdown button:hover, .dropdown button:focus-visible { background: var(--accent-action); color: white; }
+.dropdown button:hover:not(:disabled), .dropdown button:focus-visible { background: var(--accent-action); color: white; }
 .dropdown hr { border: 0; border-top: 1px solid var(--line); margin: 5px; }
 .activeApp { font-weight: 600; }
 .help { border: 0; background: none; padding: 0; font: inherit; }
@@ -42,14 +45,18 @@
 @media (max-width: 1100px) { .displayMenu, .date, .dynamicItem { display: none; } .menuLeft, .menuRight { gap: 12px; } }
 @media (max-width: 760px) { .ticker, .contract, .activeApp, .help { display: none; } .menuBar { padding: env(safe-area-inset-top, 0px) 12px 0; } }
 @media (max-width: 640px) {
+  .widgetsButton { min-width: 36px; }
+  .menuRight { gap: 8px; }
   .menuBar[data-testnet] .windowMenu, .menuBar[data-testnet] .clock { display: none; }
   .menuBar { font-size: 11px; }
   .dock { bottom: max(8px, env(safe-area-inset-bottom, 0px)); gap: 5px; padding: 7px 8px 11px; height: 62px; border-radius: 18px; }
   .dockItem { width: clamp(32px, 10vw, 44px); height: clamp(32px, 10vw, 44px); flex-basis: clamp(32px, 10vw, 44px); }
   .dockItem:hover, .dockItem:focus-visible, .dockItem:has(+ .dockItem:hover), .dockItem:hover + .dockItem { transform: none; }
-  .dynamicItem { display: none; }
+  .dynamicItem, .finderMenu { display: none; }
   .dockSeparator { height: 30px; margin: 0; }
   .gameGrid { gap: 10px; }
   .gameGrid button { width: 145px; }
   .launchpad { padding: 70px 10px 24px; overflow-y: auto; }
 }
+@media (max-width: 480px) { .windowMenu, .clock, .externalItem { display: none; } }
+@media (max-width: 360px) { .menu summary strong { display: none; } }

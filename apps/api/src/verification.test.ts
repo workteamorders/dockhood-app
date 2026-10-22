@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { decodeFunctionData, type Hash, type Hex } from 'viem';
 import { NATIVE_PAIR, verificationPoolAbi, type Tier } from '@hood/shared';
@@ -38,12 +38,14 @@ function fakeChain() {
   const writer: PoolWriter = {
     bot: '0x00000000000000000000000000000000000000b0',
     async markVerified(id, tier) {
+      if (status.get(id) !== 'Pending') throw new PoolRevert('NotPending');
       if (depleted) throw new PoolRevert('PoolDepleted');
       calls.push({ fn: 'markVerified', id, arg: tier });
       status.set(id, 'Verified');
       return `0x${'ee'.repeat(32)}`;
     },
     async markFailed(id, reason) {
+      if (status.get(id) !== 'Pending') throw new PoolRevert('NotPending');
       calls.push({ fn: 'markFailed', id, arg: reason });
       status.set(id, 'Failed');
       return `0x${'ff'.repeat(32)}`;
@@ -105,12 +107,14 @@ async function coin(address: string, symbol: string, hood = true) {
 const ENV = { VERIFICATION_SUBMISSIONS_ENABLED: 'true', ADMIN_WALLETS: bob.address };
 
 beforeEach(async () => {
+  PASS.seen.length = 0;
   chain = fakeChain();
   ctx = await setup({ pool: chain.reader, env: ENV });
   await coin(COIN, 'TWOS');
   await coin(PLAIN, 'MEME', false);
 });
 afterEach(async () => {
+  vi.restoreAllMocks();
   await ctx.close();
 });
 
@@ -173,6 +177,34 @@ describe('formal verification: submit', () => {
     expect(await ctx.db.select().from(schema.verificationSubmissions)).toHaveLength(1);
   });
 
+  it('rejects invalid UTF-8 as a client error without pinning or storing it', async () => {
+    const a = await signIn(ctx, alice);
+    const { payload, headers } = await multipart({ tokenAddress: COIN, proof: new Blob([new Uint8Array([0xc3, 0x28])]) });
+    const res = await ctx.app.inject({ method: 'POST', url: '/verification/prepare', headers: { ...headers, cookie: a }, payload });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/UTF-8/);
+    expect(ctx.pinner.files.size).toBe(0);
+    expect(await ctx.db.select().from(schema.verificationProofs)).toEqual([]);
+  });
+
+  it('refuses production proof uploads without Pinata, even when submissions are enabled', async () => {
+    const a = await signIn(ctx, alice);
+    ctx.app.deps.env.NODE_ENV = 'production';
+    ctx.app.deps.env.STAND_INS = 'allow';
+    expect((await prepare(a)).statusCode).toBe(503);
+    expect(ctx.pinner.files.size).toBe(0);
+    expect(await ctx.db.select().from(schema.verificationProofs)).toEqual([]);
+  });
+
+  it('allows production proof uploads with configured storage', async () => {
+    const a = await signIn(ctx, alice);
+    ctx.app.deps.env.NODE_ENV = 'production';
+    ctx.app.deps.env.PINATA_JWT = 'test-storage-configuration';
+    expect((await prepare(a)).statusCode).toBe(200);
+    expect(ctx.pinner.files.size).toBe(1);
+    expect(await ctx.db.select().from(schema.verificationProofs)).toHaveLength(1);
+  });
+
   it('keeps to the weekly limit before anyone pays a fee', async () => {
     const a = await signIn(ctx, alice);
     for (let i = 1; i <= 3; i++) await submitProof(a, alice.address, i, `${PROOF}-- ${i}\n`);
@@ -233,6 +265,22 @@ describe('formal verification: the worker and the review', () => {
     expect(reject.json()).toMatchObject({ status: 'rejected' });
   });
 
+  it('serializes concurrent approvals for the same coin regardless of address casing', async () => {
+    const a = await signIn(ctx, alice);
+    const b = await signIn(ctx, bob);
+    const first = await submitProof(a, alice.address, 1);
+    const copy = await submitProof(b, bob.address, 2, `${PROOF}-- copy\n`);
+    await processQueue(worker());
+    await ctx.db.update(schema.verificationSubmissions).set({ tokenAddress: `0x${COIN.slice(2).toUpperCase()}` }).where(eq(schema.verificationSubmissions.id, copy));
+    const results = await Promise.all([first, copy].map((id) => ctx.app.inject({ method: 'POST', url: '/verification/admin/review', headers: { cookie: b }, payload: { id, decision: 'approve', tier: 'SIMPLE' } })));
+    expect(results.map((r) => r.statusCode).sort()).toEqual([200, 409]);
+    const rows = await ctx.db.select().from(schema.verificationSubmissions);
+    expect(rows.filter((r) => r.status === 'approved')).toHaveLength(1);
+    expect(rows.filter((r) => r.status === 'passed')).toHaveLength(1);
+    expect(await postResults(worker())).toBe(1);
+    expect(chain.calls).toHaveLength(1);
+  });
+
   it('records a failed proof on-chain with its reason, and shows it to the submitter only', async () => {
     const a = await signIn(ctx, alice);
     const id = await submitProof(a, alice.address, 1);
@@ -269,6 +317,115 @@ describe('formal verification: the worker and the review', () => {
     chain.setDepleted(false);
     await postResults(worker());
     expect((await row(id)).status).toBe('verified');
+  });
+
+  it('reconciles an on-chain success whose receipt was lost without reposting or inventing a payout', async () => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await processQueue(worker());
+    await ctx.db.update(schema.verificationSubmissions).set({ status: 'approved', tier: 'SIMPLE' }).where(eq(schema.verificationSubmissions.id, id));
+    const markVerified = chain.writer.markVerified.bind(chain.writer);
+    vi.spyOn(chain.writer, 'markVerified').mockImplementationOnce(async (id, tier) => {
+      await markVerified(id, tier);
+      throw new Error('Worker lost the receipt after the transaction mined.');
+    });
+    expect(await postResults(worker())).toBe(0);
+    expect(await chain.reader.status(id)).toBe('Verified');
+    const reward = vi.spyOn(chain.reader, 'rewardWei');
+    ctx.advance(60_000);
+    expect(await postResults(worker())).toBe(0);
+    expect(await postResults(worker())).toBe(0);
+    expect(reward).not.toHaveBeenCalled();
+    expect(chain.calls).toEqual([{ fn: 'markVerified', id, arg: 'SIMPLE' }]);
+    expect(await row(id)).toMatchObject({ status: 'verified', rewardWei: null, verifiedAt: ctx.now(), txHashResult: null, attempts: 2, lastError: expect.stringMatching(/Reconciled Verified.*manual reconciliation/) });
+    expect((await ctx.db.select().from(schema.tokens).where(eq(schema.tokens.tokenAddress, COIN)))[0]).toMatchObject({ formal: true, formalAt: ctx.now() });
+    expect(await ctx.db.select().from(schema.callouts)).toEqual([]);
+    const tab = (await ctx.app.inject({ method: 'GET', url: `/verification/token/${COIN}` })).json();
+    expect(tab).toMatchObject({ pending: 0, verified: { id, rewardWei: null, txHashResult: null } });
+    expect((await prepare(a, `${PROOF}-- another\n`)).statusCode).toBe(409);
+  });
+
+  it('rolls back all DB settlement changes if the settlement transaction fails', async () => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await processQueue(worker());
+    await ctx.db.update(schema.verificationSubmissions).set({ status: 'approved', tier: 'SIMPLE' }).where(eq(schema.verificationSubmissions.id, id));
+    const transaction = ctx.db.transaction.bind(ctx.db);
+    vi.spyOn(ctx.db, 'transaction').mockImplementationOnce((fn) => transaction(async (tx) => {
+      await fn(tx);
+      throw new Error('Connection lost before commit.');
+    }));
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'approved', rewardWei: null, txHashResult: null, verifiedAt: null });
+    expect((await ctx.db.select().from(schema.tokens).where(eq(schema.tokens.tokenAddress, COIN)))[0].formal).toBe(false);
+    expect(await ctx.db.select().from(schema.callouts)).toEqual([]);
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'verified', rewardWei: null, txHashResult: null, lastError: expect.stringMatching(/manual reconciliation/) });
+    expect((await ctx.db.select().from(schema.tokens).where(eq(schema.tokens.tokenAddress, COIN)))[0].formal).toBe(true);
+    expect(await ctx.db.select().from(schema.callouts)).toEqual([]);
+    expect(chain.calls).toHaveLength(1);
+  });
+
+  it('retries an atomic reconciliation after a DB rollback without paying again', async () => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await processQueue(worker());
+    await ctx.db.update(schema.verificationSubmissions).set({ status: 'approved', tier: 'SIMPLE' }).where(eq(schema.verificationSubmissions.id, id));
+    chain.setStatus(id, 'Verified');
+    const transaction = ctx.db.transaction.bind(ctx.db);
+    vi.spyOn(ctx.db, 'transaction').mockImplementationOnce((fn) => transaction(async (tx) => {
+      await fn(tx);
+      throw new Error('Connection lost before reconciliation commit.');
+    }));
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'approved', verifiedAt: null, rewardWei: null, txHashResult: null });
+    expect((await ctx.db.select().from(schema.tokens).where(eq(schema.tokens.tokenAddress, COIN)))[0].formal).toBe(false);
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'verified', verifiedAt: ctx.now(), rewardWei: null, txHashResult: null });
+    expect((await ctx.db.select().from(schema.tokens).where(eq(schema.tokens.tokenAddress, COIN)))[0].formal).toBe(true);
+    expect(await ctx.db.select().from(schema.callouts)).toEqual([]);
+    expect(chain.calls).toEqual([]);
+  });
+
+  it.each(['Failed', 'Refunded'] as const)('settles an approved proof already %s on-chain without claiming a reward', async (status) => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await ctx.db.update(schema.verificationSubmissions).set({ status: 'approved', tier: 'SIMPLE' }).where(eq(schema.verificationSubmissions.id, id));
+    chain.setStatus(id, status);
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'failed', txHashResult: 'none', rewardWei: null, verifiedAt: null, lastError: null, errorSummary: expect.stringContaining(status.toLowerCase()) });
+    expect(await postResults(worker())).toBe(0);
+    expect(chain.calls).toEqual([]);
+  });
+
+  it.each(['failed', 'rejected', 'approved'] as const)('does not treat a missing on-chain submission as a settled %s result', async (status) => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await ctx.db.update(schema.verificationSubmissions).set({ status, tier: status === 'approved' ? 'SIMPLE' : null }).where(eq(schema.verificationSubmissions.id, id));
+    chain.setStatus(id, 'None');
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status, txHashResult: null, rewardWei: null, verifiedAt: null, lastError: expect.stringContaining('found None') });
+    expect(chain.calls).toEqual([]);
+  });
+
+  it.each(['failed', 'rejected'] as const)('flags an unexpected Verified result for a %s proof instead of accepting it', async (status) => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await ctx.db.update(schema.verificationSubmissions).set({ status }).where(eq(schema.verificationSubmissions.id, id));
+    chain.setStatus(id, 'Verified');
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status, txHashResult: null, rewardWei: null, verifiedAt: null, lastError: expect.stringContaining('found Verified') });
+    expect(chain.calls).toEqual([]);
+  });
+
+  it('recognizes an already-failed on-chain result without posting it twice', async () => {
+    const a = await signIn(ctx, alice);
+    const id = await submitProof(a, alice.address, 1);
+    await processQueue(worker(runnerReturning({ status: 'failed', errorSummary: 'nope' })));
+    chain.setStatus(id, 'Failed');
+    expect(await postResults(worker())).toBe(0);
+    expect(await row(id)).toMatchObject({ status: 'failed', txHashResult: 'none', lastError: null });
+    expect(chain.calls).toEqual([]);
   });
 
   it('puts a proof back in the queue when the sandbox itself fails, and after a crash', async () => {

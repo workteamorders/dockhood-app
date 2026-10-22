@@ -36,6 +36,7 @@ const runner = dockerLeanRunner({
   timeoutSec: env.VERIFICATION_TIMEOUT_SEC,
   memoryMb: env.VERIFICATION_MEMORY_MB ?? limits.memoryMb,
   swapMb: env.VERIFICATION_SWAP_MB ?? limits.swapMb ?? 0,
+  workDir: env.VERIFICATION_WORK_DIR,
 });
 
 const log = (msg: string) => console.log(`[verifier] ${new Date().toISOString()} ${msg}`);

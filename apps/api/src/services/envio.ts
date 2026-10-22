@@ -94,7 +94,7 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
     }
   }
 
-  async function query<T>(text: string, variables: Record<string, unknown>, schema: z.ZodType<T>, which: Lane = 'background'): Promise<T> {
+  async function rawQuery<T>(text: string, variables: Record<string, unknown>, schema: z.ZodType<T>, which: Lane): Promise<T> {
     const res = await post(text, variables, which);
     if (!res.ok) throw new Error(`Envio GraphQL answered ${res.status}`);
     const body = (await res.json()) as { data?: unknown; errors?: { message: string }[] };
@@ -102,8 +102,36 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
     return schema.parse(body.data);
   }
 
+  let validated: Promise<number> | undefined;
+  function validateChain(which: Lane, refresh = false): Promise<number> {
+    if (!validated || refresh) {
+      const pending = rawQuery(
+        '{ chain_metadata { chain_id latest_processed_block } }',
+        {},
+        z.object({ chain_metadata: z.array(z.object({ chain_id: z.number(), latest_processed_block: z.number().nullable() })) }),
+        which,
+      ).then(({ chain_metadata: chains }) => {
+        if (chains.some((c) => c.chain_id !== expectedChainId)) throw new Error(`Envio chain mismatch: expected only chain ${expectedChainId}`);
+        const chain = chains[0];
+        if (chain?.latest_processed_block == null) throw new Error(`Envio has not indexed Robinhood Chain ${expectedChainId} yet`);
+        return chain.latest_processed_block;
+      }).catch((error) => {
+        if (validated === pending) validated = undefined;
+        throw error;
+      });
+      validated = pending;
+    }
+    return validated;
+  }
+
+  async function query<T>(text: string, variables: Record<string, unknown>, schema: z.ZodType<T>, which: Lane = 'background'): Promise<T> {
+    await validateChain(which);
+    return rawQuery(text, variables, schema, which);
+  }
+
   /** Runs a paged query (it must take $limit and $offset) until a short page; `field` names the rows. */
   async function all<T>(text: string, variables: Record<string, unknown>, schema: z.ZodType<T[]>, field: string, which: Lane = 'background', max = Infinity): Promise<T[]> {
+    await validateChain(which);
     const out: T[] = [];
     for (let offset = 0; offset < max; offset += pageSize) {
       const page = await query(text, { ...variables, limit: pageSize, offset }, z.object({ [field]: schema }).transform((d) => d[field] as T[]), which);
@@ -114,17 +142,7 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
   }
 
   return {
-    async latestBlock(): Promise<number> {
-      const data = await query(
-        '{ chain_metadata { chain_id latest_processed_block } }',
-        {},
-        z.object({ chain_metadata: z.array(z.object({ chain_id: z.number(), latest_processed_block: z.number().nullable() })) }),
-      );
-      const chain = data.chain_metadata.find((c) => c.chain_id === expectedChainId);
-      if (!chain || data.chain_metadata.some((c) => c.chain_id !== expectedChainId)) throw new Error(`Envio chain mismatch: expected only chain ${expectedChainId}`);
-      if (chain.latest_processed_block == null) throw new Error(`Envio has not indexed Robinhood Chain ${expectedChainId} yet`);
-      return chain.latest_processed_block;
-    },
+    latestBlock: () => validateChain('background', true),
 
     async launches(fromBlock: number, toBlock: number): Promise<RawLaunch[]> {
       const rows = await all(
@@ -150,6 +168,7 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
 
     /** Sums hourly candles per token since `since` (unix seconds, an hour boundary). */
     async activity(tokens: Address[], since: number): Promise<Map<Address, Activity>> {
+      await validateChain('background');
       const out = new Map<Address, Activity>();
       for (let i = 0; i < tokens.length; i += 200) {
         const rows = await all(
@@ -187,6 +206,7 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
 
     /** Buys of at least `minQuote` on these tokens after `afterBlock`, oldest first (system callouts). */
     async bigBuys(tokens: string[], minQuote: bigint, afterBlock: number, limit = 200): Promise<(EnvioTrade & { token: string; blockNumber: number })[]> {
+      await validateChain('background');
       if (!tokens.length) return [];
       const data = await query(
         `query BigBuys($tokens: [String!]!, $min: numeric!, $after: Int!, $limit: Int!) {
@@ -210,6 +230,7 @@ export function envioClient(graphqlUrl: string, network: NetworkConfig, pageSize
       limit = 200,
       which: Lane = 'background',
     ): Promise<(EnvioTrade & { token: string; blockNumber: number })[]> {
+      await validateChain(which);
       const live = tiers.filter((t) => t.tokens.length);
       if (!live.length) return [];
       const newest = 'since' in from;

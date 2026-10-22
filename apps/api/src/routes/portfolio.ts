@@ -12,7 +12,7 @@ const CACHE_MS = 15_000;
 /** Enough for any real wallet; keeps one request bounded. */
 const MAX_COINS = 200;
 
-const units = (raw: bigint | null, decimals: number) => (raw == null ? null : Number(formatUnits(raw, decimals)));
+const units = (raw: bigint | null, decimals: number | null) => (raw == null || decimals == null ? null : Number(formatUnits(raw, decimals)));
 
 /** GET /portfolio/:wallet (docs/BRIEF.md §5.7, §9): the wallet's launches and holdings with unrealized P&L. */
 export async function portfolioRoutes(app: FastifyInstance) {
@@ -76,7 +76,7 @@ export async function portfolioRoutes(app: FastifyInstance) {
     const holdings = await Promise.all(
       coins.map(async ({ token, row, curve, pairToken }) => {
         const pair = network.findPair(pairToken);
-        const decimals = pair?.decimals ?? 18;
+        const decimals = pair?.decimals ?? null;
         const balance = balances.get(token)!;
         const state = states.get(token);
         const m = row ?? meta.get(token);
@@ -105,11 +105,11 @@ export async function portfolioRoutes(app: FastifyInstance) {
           launchedByMe: launched.some((r) => r.tokenAddress.toLowerCase() === token.toLowerCase()),
           balance: units(balance, 18)!,
           /** Pair asset per token at the curve now. */
-          price: state && state.tokenReserve > 0n && phase === 0 ? units(state.quoteReserve, decimals)! / units(state.tokenReserve, 18)! : null,
+          price: decimals != null && state && state.tokenReserve > 0n && phase === 0 ? units(state.quoteReserve, decimals)! / units(state.tokenReserve, 18)! : null,
           value: units(value, decimals),
           costBasis: units(cost, decimals),
           pnl: units(pnl, decimals),
-          pnlPct: pnl != null && cost != null && cost > 0n ? Number((pnl * 10_000n) / cost) / 100 : null,
+          pnlPct: decimals != null && pnl != null && cost != null && cost > 0n ? Number((pnl * 10_000n) / cost) / 100 : null,
         };
       }),
     );

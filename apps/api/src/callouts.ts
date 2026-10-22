@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
+import type { NetworkConfig } from '@hood/shared';
 import { schema, type Db } from './db';
 
 export const REACTION_KINDS = ['rocket', 'eyes', 'skull'] as const;
@@ -36,19 +37,21 @@ export function decodeCursor(cursor: string): { createdAt: Date; id: string } | 
 }
 
 /**
- * `$TICKER` links only to indexed tokens; on a collision the hood.exe launch wins, else the most recent
- * (docs/BRIEF.md §5.5).
+ * `$TICKER` links only to indexed tokens. The official alias is reserved for its configured address;
+ * other collisions prefer a hood.exe launch, else the most recent (docs/BRIEF.md §5.5).
  */
-export async function resolveTicker(db: Db, text: string): Promise<{ tokenAddress: string; ticker: string } | null> {
+export async function resolveTicker(db: Db, text: string, network: NetworkConfig): Promise<{ tokenAddress: string; ticker: string } | null> {
   const match = /\$([A-Za-z0-9]{2,16})\b/.exec(text);
   if (!match) return null;
+  const official = network.officialToken;
+  const alias = official && match[1].toUpperCase() === official.ticker;
   const [row] = await db
     .select({ tokenAddress: schema.tokens.tokenAddress, ticker: schema.tokens.symbol })
     .from(schema.tokens)
-    .where(sql`upper(${schema.tokens.symbol}) = ${match[1].toUpperCase()}`)
+    .where(alias ? sql`lower(${schema.tokens.tokenAddress}) = ${official.address.toLowerCase()}` : sql`upper(${schema.tokens.symbol}) = ${match[1].toUpperCase()}`)
     .orderBy(desc(schema.tokens.hood), desc(schema.tokens.blockNumber))
     .limit(1);
-  return row ?? null;
+  return row ? { ...row, ticker: alias ? official.ticker : row.ticker } : null;
 }
 
 export async function reactionCounts(db: Db, ids: string[]): Promise<Map<string, Reactions>> {

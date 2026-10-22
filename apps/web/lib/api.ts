@@ -91,7 +91,7 @@ const tokenItemSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   logo: z.string(),
-  pair: z.object({ address: z.string(), symbol: z.string(), decimals: z.number() }),
+  pair: z.object({ address: z.string(), symbol: z.string(), decimals: z.number().int().min(0).max(255).nullable() }),
   hood: z.boolean(),
   statement: z.string().nullable(),
   blurb: z.string().nullable(),
@@ -136,7 +136,7 @@ const holdingSchema = z.object({
   symbol: z.string(),
   name: z.string(),
   logo: z.string(),
-  pair: z.object({ address: z.string(), symbol: z.string(), decimals: z.number() }),
+  pair: z.object({ address: z.string(), symbol: z.string(), decimals: z.number().int().min(0).max(255).nullable() }),
   hood: z.boolean(),
   rigorScore: z.number().nullable(),
   /** FORMAL ✓: a Lean proof was verified (Σ 100). */

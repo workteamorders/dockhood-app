@@ -20,6 +20,8 @@ if (!['init', 'status', 'prepare', 'deploy'].includes(command) || flags.some(f =
   process.exit(1);
 }
 const broadcast = flags.includes('--broadcast');
+/** Minimum ETH the deployer must keep after each tx. Full plan costs ~0.0016 ETH (gas ~0.0006 + 0.001 value). */
+const GAS_RESERVE = parseEther('0.005');
 const rpc = process.env.TESTNET_RPC_URL ?? RPC;
 const chain = defineChain({ id: CHAIN_ID, name: 'Robinhood Testnet', testnet: true,
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [rpc] } } });
@@ -140,7 +142,7 @@ async function status(wallets: Wallets) {
     const balances: Record<string, string> = {};
     for (const role of ROLES) balances[role] = (await client.getBalance({ address: wallets.addresses[role] })).toString();
     result.balancesWei = balances;
-    if (BigInt(balances.deployer) < parseEther('0.02')) blockers.push('Deployer needs testnet ETH; minimum broadcast reserve is 0.02 ETH (not a total deployment quote).');
+    if (BigInt(balances.deployer) < GAS_RESERVE) blockers.push('Deployer needs testnet ETH; minimum broadcast reserve is 0.005 ETH (not a total deployment quote).');
   } catch { blockers.push('Testnet RPC unavailable or chain ID is not 46630.'); }
   if (existsSync(join(DIR, 'journal.json'))) {
     const journal = read<Journal>('journal.json');
@@ -278,7 +280,7 @@ async function deploy(wallets: Wallets) {
       const gas = gasEstimate * 125n / 100n;
       const gasPrice = (await client.getGasPrice()) * 2n;
       const balance = await client.getBalance({ address: account.address });
-      if (balance < gas * gasPrice + BigInt(step.value) + parseEther('0.02')) throw new TestnetError('Insufficient testnet gas plus 0.02 ETH reserve.');
+      if (balance < gas * gasPrice + BigInt(step.value) + GAS_RESERVE) throw new TestnetError('Insufficient testnet gas plus 0.005 ETH reserve.');
       const raw = await wallet.signTransaction({ chain, type: 'legacy', nonce, gas, gasPrice, to: step.to, data: step.data, value: BigInt(step.value) });
       entry = { name: step.name, raw, hash: keccak256(raw), status: 'signed' };
       journal.entries.push(entry);
@@ -298,8 +300,8 @@ async function deploy(wallets: Wallets) {
         const nonce = await client.getTransactionCount({ address: account.address, blockTag: 'pending' });
         if (nonce > step.nonce) throw new TestnetError('Signed intent is missing but nonce is consumed; manual review required.');
         const tx = await assertIntent(entry.raw, entry.hash, step, account.address);
-        if (await client.getBalance({ address: account.address }) < tx.gas! * tx.gasPrice! + BigInt(step.value) + parseEther('0.02')) {
-          throw new TestnetError('Insufficient testnet gas plus 0.02 ETH reserve for persisted intent.');
+        if (await client.getBalance({ address: account.address }) < tx.gas! * tx.gasPrice! + BigInt(step.value) + GAS_RESERVE) {
+          throw new TestnetError('Insufficient testnet gas plus 0.005 ETH reserve for persisted intent.');
         }
         await assertChain();
         await client.sendRawTransaction({ serializedTransaction: entry.raw });

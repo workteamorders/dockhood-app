@@ -16,7 +16,7 @@ import { pinLaunch, recordLaunch } from '@/lib/api';
 import { network } from '@/lib/network';
 import { ensureSession } from '@/lib/siwe';
 import { LAUNCH_CONFIG_ID, type LaunchTerms } from '@/lib/pons/launch';
-import { chain, wagmiConfig } from '@/lib/wagmi';
+import { chain, ensureRpcNetwork, wagmiConfig } from '@/lib/wagmi';
 import { creatorTaxBps, currentRigor, devBuyAmount, type Draft } from './draft';
 
 export type DeployStep = 'signin' | 'pin' | 'approve' | 'sign' | 'confirm' | 'record';
@@ -71,6 +71,7 @@ export async function deployLaunch(draft: Draft, terms: LaunchTerms, onStep: (st
   const { address: account, chainId } = getAccount(wagmiConfig);
   if (!account) throw new Error('Connect a wallet first.');
   if (!draft.logo) throw new Error('Choose a logo image.');
+  await ensureRpcNetwork();
   if (chainId !== chain.id) await switchChain(wagmiConfig, { chainId: chain.id });
 
   const quoteIn = devBuyAmount(draft, terms.decimals) ?? 0n;
@@ -109,12 +110,12 @@ export async function deployLaunch(draft: Draft, terms: LaunchTerms, onStep: (st
 
   if (plan.approval) {
     const { token, spender, amount } = plan.approval;
-    const allowance = await readContract(wagmiConfig, { address: token, abi: erc20Abi, functionName: 'allowance', args: [account, spender] });
+    const allowance = await readContract(wagmiConfig, { chainId: chain.id, address: token, abi: erc20Abi, functionName: 'allowance', args: [account, spender] });
     if (allowance < amount) {
       onStep('approve');
-      const hash = await writeContract(wagmiConfig, { address: token, abi: erc20Abi, functionName: 'approve', args: [spender, amount] });
+      const hash = await writeContract(wagmiConfig, { chainId: chain.id, account, address: token, abi: erc20Abi, functionName: 'approve', args: [spender, amount] });
       onStep('approve', hash);
-      const r = await waitForTransactionReceipt(wagmiConfig, { hash });
+      const r = await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
       if (r.status !== 'success') throw new Error('The approval transaction failed.');
     }
   }
@@ -122,11 +123,11 @@ export async function deployLaunch(draft: Draft, terms: LaunchTerms, onStep: (st
   onStep('sign');
   const hash =
     plan.kind === 'launchToken'
-      ? await writeContract(wagmiConfig, (await simulateContract(wagmiConfig, { ...plan.request, account })).request)
-      : await writeContract(wagmiConfig, (await simulateContract(wagmiConfig, { ...plan.request, account })).request);
+      ? await writeContract(wagmiConfig, { ...(await simulateContract(wagmiConfig, { ...plan.request, account, chainId: chain.id })).request, chainId: chain.id })
+      : await writeContract(wagmiConfig, { ...(await simulateContract(wagmiConfig, { ...plan.request, account, chainId: chain.id })).request, chainId: chain.id });
 
   onStep('confirm', hash);
-  const receipt = await waitForTransactionReceipt(wagmiConfig, { hash });
+  const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: chain.id, hash });
   if (receipt.status !== 'success') throw new Error('The launch transaction reverted on-chain.');
   const [launched] = parseEventLogs({ abi: ponsFactoryAbi, eventName: 'TokenLaunched', logs: receipt.logs });
   if (!launched) throw new Error('The transaction confirmed but no launch was found in it.');

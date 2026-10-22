@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { CheckVerdict } from '@hood/shared';
 
 /** The outcome of checking one proof. */
@@ -28,6 +28,8 @@ export type SandboxConfig = {
   cpus: number;
   pidsLimit: number;
   tmpfsMb: number;
+  /** Existing Docker-shared parent for private per-proof directories; defaults to the OS temp directory. */
+  workDir?: string;
 };
 
 /** Thrown when the sandbox itself failed (Docker down, image missing): the proof is retried, not failed. */
@@ -106,7 +108,7 @@ function docker(args: string[], timeoutMs: number, name: string): Promise<Run> {
 export function dockerLeanRunner(cfg: SandboxConfig): LeanRunner {
   return {
     async verify(source) {
-      const root = await mkdtemp(join(tmpdir(), 'hood-verify-'));
+      const root = await mkdtemp(join(resolve(cfg.workDir ?? tmpdir()), 'hood-verify-'));
       const work = join(root, 'work');
       const out = join(root, 'out');
       const id = randomUUID().slice(0, 12);

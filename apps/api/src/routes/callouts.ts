@@ -120,7 +120,7 @@ export async function calloutRoutes(app: FastifyInstance) {
         .limit(1);
       link = row ?? null;
     }
-    link ??= await resolveTicker(db, text);
+    link ??= await resolveTicker(db, text, env.network);
     const trade = link ? await latestTrade(wallet, link.tokenAddress) : null;
 
     const [row] = await db

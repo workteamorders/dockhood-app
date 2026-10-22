@@ -75,3 +75,40 @@ State saves fsync the file before closing it, then fsync the parent directory af
 Before each send the tool estimates gas, checks balance and nonce, signs with the dedicated wallet, and journals the exact signed transaction before sending. Resume verifies its recovered signer, chain, nonce, calldata, destination and value against the plan, rechecks successful receipts and runtime hashes, waits for known pending transactions, or rebroadcasts the identical signed transaction. It does not generate replacement transactions or silently redeploy after a revert, changed nonce, reorg, changed artifact or plan mismatch. A pending underpriced transaction may require manual review; there is intentionally no automatic fee bump. Signed journal transactions are sensitive operational data, although they do not contain private keys.
 
 After two confirmations per transaction, the journal records receipt/block and created address/runtime hash. Completion requires all steps and final getters for ownership, dependency wiring, rewards and launch economics. Completion means **deployed and wiring checked**, not end-to-end readiness: launch, buy, sell, graduation/LP locking, escrow distribution, vesting and formal verification payouts still need dedicated testnet smoke tests. Do not advertise completion when `prepare` or `deploy` reports blocked. Source explorer publication is not automated; retained Sourcify inputs/compiler settings provide provenance for subsequent verification.
+
+## Runtime Environments
+
+After a **public** deployment is complete, run from the repository root:
+
+```sh
+pnpm --filter @hood/shared exec tsx scripts/testnet-runtime.ts
+pnpm --filter @hood/shared exec vitest run scripts/testnet-runtime.test.ts
+```
+
+The renderer accepts no flags. Its default RPC is `https://robinhood-testnet.drpc.org`; an explicit `TESTNET_RPC_URL` can select that endpoint, `https://robinhood-sepolia-rpc.publicnode.com`, or `https://rpc.testnet.chain.robinhood.com`. Only these approved, credential-free HTTPS root URLs are accepted, not loopback/private/custom hosts, alternate ports, paths, queries or fragments. This changes the renderer's testnet default only, not shared network defaults or `testnet.ts` itself.
+
+It requires `.testnet/plan.json` and a complete, matching `.testnet/journal.json` with every step successful. It reruns `testnet.ts deploy` **without `--broadcast`**, passing the selected public RPC explicitly, to revalidate signed intents, public receipts, runtime hashes and wiring. Both that RPC and an independent provider must report chain 46630 and the same successful factory receipt/block/address matching the public journal. The witness is PublicNode for dRPC, otherwise dRPC; official DNS availability is not required for the default path. There is no fallback to local evidence if either provider fails. Fork/simulation reports never substitute for public evidence, even if a funded local node reports 46630. An incomplete or unfunded deployment remains blocked; rendering is not a way around deployment prerequisites.
+
+Before creating runtime files, the selected RPC must also serve wildcard `eth_getLogs` (no address/topics filter) over at most the last four blocks. Envio needs wildcard curve logs: an endpoint supporting only address-filtered logs is insufficient. dRPC is preferred for this capability; PublicNode can witness receipts but is known to reject wildcard logs, so selecting it as the primary should block rendering. The small probe is not a full historical backfill or future availability guarantee.
+
+```sh
+TESTNET_RPC_URL=https://robinhood-testnet.drpc.org pnpm --filter @hood/shared exec tsx scripts/testnet-runtime.ts
+```
+
+Only ignored `.testnet/runtime/{api,web,indexer,worker}.env` files and `credentials.json` are created. The directory is mode `0700`, files mode `0600`; session, proxy and Hasura credentials are securely generated once and reused. Existing matching runtime files are retained; differing or unsafe files cause refusal, not overwrite. Switching RPCs (including upgrading older official-RPC/proxy envs) therefore requires operator review and removal of the generated env files before rerendering; retain `credentials.json` to preserve service credentials, and never remove the deployment plan/journal or wallet files. A crash may leave partial output or `runtime.lock`; inspect state and confirm no renderer is running before removing a stale lock. No app `.env` is read or changed, no service is started, no wallet secret is read and no secret value is printed. Do not use `cat`, shell tracing, or Compose's expanded `config` output to share these files.
+
+API, worker, indexer and web RPC values use the same selected endpoint. `NEXT_PUBLIC_RPC_URL` is an absolute, credential-free public URL, so the current web adapter uses it for browser reads, SSR and wallet chain configuration instead of falling back to unreachable official DNS for `/api/rpc`. No web adapter changes or unused `NEXT_PUBLIC_WALLET_RPC_URL` variable are introduced. A future proxy-plus-separate-wallet-RPC adapter can be coordinated independently.
+
+API binds `127.0.0.1:8787`; web uses port `3101`, `/api` via `API_PROXY_TARGET`, and direct WebSockets on API `/ws`. CORS permits `localhost:3101` and `127.0.0.1:3101`. Postgres `54321`, Redis `63791` and Hasura `8081` match the separate testnet stack:
+
+```sh
+docker compose --env-file .testnet/runtime/indexer.env -f docker-compose.testnet.yml up -d postgres redis
+docker compose --env-file .testnet/runtime/indexer.env -f docker-compose.testnet.yml --profile indexer up -d --build
+pnpm --filter @hood/api exec tsx --env-file=../../.testnet/runtime/api.env src/index.ts
+pnpm --filter @hood/web exec node --env-file=../../.testnet/runtime/web.env node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3101
+pnpm --filter @hood/api exec tsx --env-file=../../.testnet/runtime/worker.env src/worker.ts
+```
+
+Use a clean service environment; inherited variables take precedence over Node env files. Avoid the API `dev` script here because it also loads the app's `.env`. Database migrations, indexer readiness, port availability and application E2E are separate prerequisites, not performed or attested by rendering. API responses use the indexer's public Hasura role, not its admin secret. DeepSeek/Pinata credentials are not imported; development stand-ins are enabled. Proof submissions remain disabled.
+
+`worker.env` is key-free and can configure the general worker. A verifier signing launcher is intentionally **not implemented** here. Do not add `VERIFIER_BOT_PRIVATE_KEY` to any rendered file, especially API/web. A future explicit verifier launcher must validate the dedicated verifier role and inject its key only into a fixed, `shell: false` child process environment in memory, never print it or write it to an env file. No verifier execution is needed for the offline safety tests above.

@@ -78,6 +78,8 @@ const envSchema = z
     /** Per-machine sandbox memory, overriding sandbox-config.json: RAM for the checker, and swap it may add. */
     VERIFICATION_MEMORY_MB: z.coerce.number().int().min(1024).optional(),
     VERIFICATION_SWAP_MB: z.coerce.number().int().min(0).optional(),
+    /** Docker-shared parent for private proof directories; defaults to the OS temp directory. */
+    VERIFICATION_WORK_DIR: optional,
     /** The checker image the worker runs (apps/verifier). */
     VERIFIER_IMAGE: z.string().default('hoodexe/verifier:latest'),
   })

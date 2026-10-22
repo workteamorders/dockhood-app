@@ -18,7 +18,6 @@ const env = loadEnv();
 if (!env.REDIS_URL) throw new Error('The worker needs REDIS_URL to reach the API.');
 await assertRpcChain(env.network);
 const envio = env.ENVIO_GRAPHQL_URL ? envioClient(env.ENVIO_GRAPHQL_URL, env.network, 1_000, { background: 20 }) : undefined;
-if (envio) await envio.latestBlock();
 const { db, close } = await connectPostgres(env.DATABASE_URL);
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2, family: 0 });
 const pubsub = redisPubSub(redis);
