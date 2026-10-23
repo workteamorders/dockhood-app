@@ -1,0 +1,67 @@
+# Render Blueprint: Dockhood API on Robinhood Chain Testnet (46630). See docs/DEPLOY-TESTNET.md.
+# Render dashboard > New > Blueprint > pick this repo and branch. It asks for PROXY_SECRET once (paste the value
+# from your local .env.vercel.local; it must equal the web app's PROXY_SECRET on Vercel).
+# Indexer/Hasura are not in this file: TOKEN_INDEX=off until they exist (docs/DEPLOY-TESTNET.md, section 3).
+services:
+  - type: web
+    name: dockhood-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: CHAIN_ID
+        value: "46630"
+      - key: RPC_URL_SERVER
+        value: https://robinhood-testnet.drpc.org
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dockhood-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: dockhood-kv
+          property: connectionString
+      - key: PONS_LAUNCH_FACTORY
+        value: "0x9B78f8878fb269CdDAEdfFe9Eb00368d90BF9095"
+      - key: PONS_LAUNCH_AND_BUY
+        value: "0x48DD574A31C842b177c3582d2469506964C867ae"
+      - key: PAIR_TOKENS_JSON
+        value: "[]"
+      - key: RIGOR_REGISTRY_ADDRESS
+        value: "0xB97b5A72BD6D508E5376F10D740f67C7C6ab33D0"
+      - key: VERIFICATION_POOL_ADDRESS
+        value: "0x3C741cF3BB5b6cee06f30320cdBA489aEfDD7AE2"
+      - key: FEE_SPLITTER_ADDRESS
+        value: "0x0A7A90e3863D66393B1A97ceAd5700A3f6cEd44c"
+      - key: VERIFICATION_SUBMISSIONS_ENABLED
+        value: "false"
+      - key: VERIFICATION_SUBMISSION_FEE_WEI
+        value: "10000000000000"
+      - key: ADMIN_WALLETS
+        value: "0xCD8589e80a6e3C99C42A722606052A5F91076dd1"
+      - key: TOKEN_INDEX
+        value: "off"
+      - key: STAND_INS
+        value: allow
+      - key: CORS_ORIGINS
+        value: https://dockhood-app-web.vercel.app
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PROXY_SECRET
+        sync: false
+
+  # The worker (system callouts, activity) is a paid instance on Render, so it is left out of the free setup.
+  # To add it later, copy the dockhood-api envVars here with type: worker, HOOD_PROCESS=worker and a paid plan.
+
+  - type: keyvalue
+    name: dockhood-kv
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: dockhood-db
+    plan: free
+    postgresMajorVersion: "17"
