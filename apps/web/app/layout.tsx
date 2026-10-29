@@ -6,7 +6,7 @@ import '@fontsource/jetbrains-mono';
 import './globals.css';
 
 // Absolute URLs for link previews: NEXT_PUBLIC_SITE_URL, else the production domain.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://dockhood.fun';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.dockhood.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

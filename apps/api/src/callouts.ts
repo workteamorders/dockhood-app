@@ -96,7 +96,7 @@ export async function presentCallouts(db: Db, rows: CalloutRow[], opts: { offici
     const p = profileBy.get(r.wallet);
     const dto: CalloutDto = {
       id: r.id,
-      wallet: r.kind === 'system' ? 'hood.exe' : r.wallet,
+      wallet: r.kind === 'system' ? 'Dockhood' : r.wallet,
       tokenAddress: r.tokenAddress,
       ticker: r.ticker,
       text: r.text,

@@ -131,7 +131,7 @@ describe('system callouts', () => {
     await ctx.pubsub.subscribe(CALLOUTS_CHANNEL, (m) => seen.push(m as (typeof seen)[number]));
     await systemCalloutsTick({ db: ctx.db, pubsub: ctx.pubsub, now: ctx.now });
     expect(seen.map((m) => m.callout.text)).toEqual(['$NEW launched']);
-    expect(seen[0].callout).toMatchObject({ wallet: 'hood.exe', official: true, kind: 'system' });
+    expect(seen[0].callout).toMatchObject({ wallet: 'Dockhood', official: true, kind: 'system' });
     expect(seen[0].callout).not.toHaveProperty('txHash');
   });
 });

@@ -47,6 +47,15 @@
   will-change: transform;
 }
 
+/* When the motion stops (a dialog or window takes over) the layers ease back instead of jumping to rest.
+   Not while moving: the animation frames already ease, and a transition would add lag. */
+.wallpaper:not([data-moving]) :is(.far, .middle, .near) {
+  transition: transform .5s cubic-bezier(.2, .7, .2, 1);
+}
+.wallpaper:not([data-moving]) .glow {
+  transition: opacity .35s ease-out;
+}
+
 /* A bounded gradient, not an animated full-screen blur/filter. */
 .glow {
   position: absolute;

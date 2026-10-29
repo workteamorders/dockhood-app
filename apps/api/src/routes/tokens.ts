@@ -124,7 +124,7 @@ async function findToken(db: Db, address: string): Promise<TokenRow> {
     .from(schema.tokens)
     .where(sql`lower(${schema.tokens.tokenAddress}) = ${address.toLowerCase()}`)
     .limit(1);
-  if (!row) throw new HttpError(404, 'hood.exe has not indexed this token yet.');
+  if (!row) throw new HttpError(404, 'Dockhood has not indexed this token yet.');
   return row;
 }
 

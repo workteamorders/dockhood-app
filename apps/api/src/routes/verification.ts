@@ -40,7 +40,7 @@ export async function ingestSubmissions(db: Db, found: PoolSubmission[]): Promis
       .from(schema.tokens)
       .where(sql`lower(${schema.tokens.tokenAddress}) = ${s.token.toLowerCase()}`)
       .limit(1);
-    const why = !coin?.hood || !coin.statement ? 'Not a hood.exe theorem coin.' : !proof ? 'The proof file was not uploaded through hood.exe.' : null;
+    const why = !coin?.hood || !coin.statement ? 'Not a Dockhood theorem coin.' : !proof ? 'The proof file was not uploaded through Dockhood.' : null;
     const [row] = await db
       .insert(subs)
       .values({
@@ -79,7 +79,7 @@ export async function verificationRoutes(app: FastifyInstance) {
 
   const enabled = async () => env.VERIFICATION_SUBMISSIONS_ENABLED && !!pool && !(await submissionsPaused(db));
   const requireAdmin = async (wallet: string | null) => {
-    if (!isAdminWallet(env.ADMIN_WALLETS, wallet)) throw new HttpError(403, 'Only hood.exe admins can do that.');
+    if (!isAdminWallet(env.ADMIN_WALLETS, wallet)) throw new HttpError(403, 'Only Dockhood admins can do that.');
   };
 
   const tokenInfo = async (addresses: string[]) => {
@@ -185,7 +185,7 @@ export async function verificationRoutes(app: FastifyInstance) {
       .from(schema.tokens)
       .where(sql`lower(${schema.tokens.tokenAddress}) = ${tokenAddress.toLowerCase()}`)
       .limit(1);
-    if (!coin?.hood || !coin.statement) throw new HttpError(400, 'Only hood.exe theorem coins can be formally verified.');
+    if (!coin?.hood || !coin.statement) throw new HttpError(400, 'Only Dockhood theorem coins can be formally verified.');
     if (coin.formal) throw new HttpError(409, 'This coin is already formally verified.');
 
     // The API's own weekly limit, so nobody pays a fee the contract would refuse.

@@ -19,7 +19,7 @@ import { guardedHttp } from './rpcTransport';
  */
 const transportUrl = appRpc.startsWith('/') ? typeof window === 'undefined' ? network.rpcUrl : new URL(appRpc, window.location.origin).href : appRpc;
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window === 'undefined' ? 'https://dockhood.fun' : window.location.origin);
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window === 'undefined' ? 'https://www.dockhood.com' : window.location.origin);
 
 export const chain: Chain = network.chain;
 

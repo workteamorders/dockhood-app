@@ -56,7 +56,7 @@ export function Footer() {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 20, fontSize: 22, color: '#45414f' }}>
       <span>Dockhood · Robinhood Chain · Pons</span>
-      <span style={{ fontWeight: 700, color: '#3a2d6b' }}>dockhood.fun</span>
+      <span style={{ fontWeight: 700, color: '#3a2d6b' }}>dockhood.com</span>
     </div>
   );
 }

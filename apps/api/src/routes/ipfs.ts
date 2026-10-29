@@ -25,7 +25,7 @@ export async function ipfsRoutes(app: FastifyInstance) {
 
   app.post('/ipfs', { preHandler: app.requireSession }, async (req) => {
     // Production on stand-ins (STAND_INS=allow): a launch pinned by the dev pinner would put a dead IPFS link on-chain forever.
-    if (env.NODE_ENV === 'production' && !env.PINATA_JWT) throw new HttpError(503, 'Launching is paused while hood.exe finishes setting up. Browsing and trading still work.');
+    if (env.NODE_ENV === 'production' && !env.PINATA_JWT) throw new HttpError(503, 'Launching is paused while Dockhood finishes setting up. Browsing and trading still work.');
     if (!(await allow(kv, `ipfs:${req.wallet}`, 20, 3_600))) throw new HttpError(429, 'Too many uploads. Wait a while and try again.');
 
     let logo: Uint8Array | undefined;
