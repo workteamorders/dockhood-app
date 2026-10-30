@@ -43,7 +43,9 @@
   );
 }
 
-.wallpaper[data-moving] :is(.far, .middle, .near) {
+/* Keep the layers composited at all times. Dropping will-change when a window opens made the browser
+   re-rasterize the whole SVG while the windows' backdrop blur was sampling it, which showed as a flicker. */
+.wallpaper :is(.far, .middle, .near) {
   will-change: transform;
 }
 
@@ -70,7 +72,7 @@
   transform: translate3d(calc(var(--glow-x, 0px) - 50%), calc(var(--glow-y, 0px) - 50%), 0);
 }
 
-.wallpaper[data-moving] .glow {
+.wallpaper .glow {
   will-change: transform, opacity;
 }
 

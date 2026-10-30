@@ -6,7 +6,6 @@
   color: var(--text-primary);
   font: 14px/1.6 var(--font-ui);
   background: var(--surface);
-  backdrop-filter: blur(32px) saturate(180%);
 }
 .white { background: var(--surface); }
 .hero { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
@@ -32,7 +31,6 @@
 .context { margin: 0 0 24px; color: var(--text-secondary); font-size: 13px; }
 .ctaRow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
 .ctaRow button { min-height: 38px; padding: 8px 14px; border-radius: 8px; font-size: 13px; }
-.contractSection { margin-bottom: 20px; }
 .tip { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border: 1px solid rgba(10, 132, 255, .14); border-radius: 12px; background: rgba(10, 132, 255, .05); font-size: 12px; }
 .tip > svg { flex: 0 0 auto; margin-top: 2px; }
 .tip p { margin: 0; color: var(--text-secondary); }

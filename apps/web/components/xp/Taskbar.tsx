@@ -6,7 +6,6 @@ import { APPS } from '@/components/apps/meta';
 import { openApp } from '@/lib/openApp';
 import { useIdentity } from '@/lib/identity';
 import { useWindows } from '@/store/windows';
-import { ContractTrayButton } from './ContractAddress';
 import { PriceTicker } from './PriceTicker';
 import { CalloutsIcon, HoodLogo, WalletIcon } from './Icons';
 import styles from './Taskbar.module.css';
@@ -82,7 +81,6 @@ export function Taskbar({ startOpen, onStartToggle, unreadCallouts = false }: Ta
 
       <div className={styles.tray}>
         <PriceTicker />
-        <ContractTrayButton />
         <button
           type="button"
           className={styles.trayBtn}

@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/xp/Button';
-import { OfficialContract } from '@/components/xp/ContractAddress';
 import { HoodLogo, InfoIcon } from '@/components/xp/Icons';
 import { VERIFICATION_LIVE } from '@/lib/features';
 import { openApp } from '@/lib/openApp';
@@ -36,10 +35,6 @@ export function Welcome() {
         <Button large onClick={() => openApp('about')}>
           About
         </Button>
-      </div>
-
-      <div className={styles.contractSection}>
-        <OfficialContract />
       </div>
 
       <div className={styles.tip}>

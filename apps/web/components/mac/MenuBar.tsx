@@ -8,7 +8,6 @@ import { network } from '@/lib/network';
 import { openApp } from '@/lib/openApp';
 import { useWindows } from '@/store/windows';
 import { finderCommands, useFinderUi, type FinderActions } from '@/store/finderUi';
-import { ContractTrayButton } from '../xp/ContractAddress';
 import { PriceTicker } from '../xp/PriceTicker';
 import { DockhoodLogo } from './AppIcon';
 import styles from './Shell.module.css';
@@ -106,7 +105,7 @@ export function MenuBar({ onLogOff, onShutDown, onWidgets }: { onLogOff: () => v
     <div className={styles.menuRight}>
       <button className={styles.widgetsButton} onClick={onWidgets} aria-label="Open desktop widgets" aria-haspopup="dialog" title="Desktop widgets"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="9.5" y="1.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="1.5" y="9.5" width="5" height="5" rx="1.5" stroke="currentColor"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.5" fill="currentColor"/></svg><span>Widgets</span></button>
       {network.chain.testnet && <span className={styles.testnet} title={`${network.chain.name} (${network.chainId}). Use an injected wallet with test ETH.`}>Testnet</span>}
-      <span className={styles.ticker}><PriceTicker/></span><span className={styles.contract}><ContractTrayButton/></span>
+      <span className={styles.ticker}><PriceTicker/></span>
       <button className={styles.wallet} onClick={() => connected ? openAccountModal?.() : openConnectModal?.()}><span className={connected ? styles.connected : styles.walletDot}/>{connected ? label : 'Connect Wallet'}</button>
       <span className={styles.date}>{today}</span><time className={styles.clock} suppressHydrationWarning>{clock}</time>
     </div>

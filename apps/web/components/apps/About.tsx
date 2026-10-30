@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 import { network } from '@/lib/network';
 import { Button } from '@/components/xp/Button';
-import { contractRow } from '@/components/xp/ContractAddress';
 import { GroupBox } from '@/components/xp/Controls';
 import { HoodLogo } from '@/components/xp/Icons';
 import { openApp } from '@/lib/openApp';
@@ -24,8 +23,6 @@ const ROWS: [string, ReactNode][] = [
     </a>,
   ],
 ];
-const CONTRACT = contractRow();
-if (CONTRACT) ROWS.push(CONTRACT);
 
 export function About({ win }: { win: WindowState }) {
   return (
