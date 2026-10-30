@@ -10,7 +10,7 @@ import { XIcon } from '../mac/AppIcon';
 const DOUBLE_TAP_MS = 400;
 
 /** Desktop shortcuts that open a web page in a new tab instead of a window. */
-const LINKS = { x: { label: '@dockhood', Icon: XIcon, href: X_URL } };
+const LINKS = { x: { label: '@Dock_Hood', Icon: XIcon, href: X_URL } };
 type LinkId = keyof typeof LINKS;
 export type DesktopItemId = AppId | LinkId;
 

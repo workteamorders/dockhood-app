@@ -29,6 +29,6 @@ export function Dock({ unread = false }: { unread?: boolean }) {
       return <button type="button" key={w.id} className={`${styles.dockItem} ${styles.dynamicItem}`} aria-label={w.title} aria-pressed={w.id === activeId && !w.minimized} onClick={() => toggle(w.id)}><span className={styles.tooltip}>{w.title}</span><app.Icon size={56}/><span className={styles.running}/></button>;
     })}
     <span className={styles.dockSeparator}/>
-    <a className={`${styles.dockItem} ${styles.externalItem}`} href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="@dockhood on X"><span className={styles.tooltip}>@dockhood on X</span><XIcon size={56}/></a>
+    <a className={`${styles.dockItem} ${styles.externalItem}`} href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="@Dock_Hood on X"><span className={styles.tooltip}>@dockhood on X</span><XIcon size={56}/></a>
   </nav>;
 }
