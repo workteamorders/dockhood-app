@@ -1,13 +1,14 @@
 'use client';
 
 import { APPS, type AppId } from '@/components/apps/meta';
+import { VERIFICATION_LIVE } from '@/lib/features';
 import { openApp } from '@/lib/openApp';
 import { X_URL } from '@/lib/social';
 import { useWindows } from '@/store/windows';
 import { XIcon } from './AppIcon';
 import styles from './Shell.module.css';
 
-const PINNED: AppId[] = ['finder', 'launch', 'explore', 'verification', 'callouts', 'portfolio', 'games'];
+const PINNED: AppId[] = (['finder', 'launch', 'explore', 'verification', 'callouts', 'portfolio', 'games'] as AppId[]).filter((id) => id !== 'verification' || VERIFICATION_LIVE);
 
 export function Dock({ unread = false }: { unread?: boolean }) {
   const windows = useWindows((s) => s.windows);

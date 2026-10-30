@@ -3,6 +3,7 @@
 import { Button } from '@/components/xp/Button';
 import { OfficialContract } from '@/components/xp/ContractAddress';
 import { HoodLogo, InfoIcon } from '@/components/xp/Icons';
+import { VERIFICATION_LIVE } from '@/lib/features';
 import { openApp } from '@/lib/openApp';
 import styles from './apps.module.css';
 
@@ -18,7 +19,7 @@ export function Welcome() {
       </div>
       <h1 className={styles.display}>The launchpad that boots clean.</h1>
       <p className={styles.lead}>
-        Theorem-backed coins. Formally verified. Fully on-chain.
+        {VERIFICATION_LIVE ? 'Theorem-backed coins. Formally verified. Fully on-chain.' : 'Theorem-backed coins. Fully on-chain.'}
       </p>
       <p className={styles.context}>Launch on Robinhood Chain. Route through Pons. Keep control of your wallet.</p>
 

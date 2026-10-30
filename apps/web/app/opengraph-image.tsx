@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { VERIFICATION_LIVE } from '@/lib/features';
 import { Footer, OG_SIZE, XpFrame } from '@/lib/ogCard';
 
 export const alt = 'Dockhood. The launchpad that boots clean.';
@@ -15,7 +16,7 @@ export default function Image() {
         </div>
         <div style={{ display: 'flex', marginTop: 12, fontSize: 52, fontWeight: 700, letterSpacing: -1, color: '#3a2d6b' }}>The launchpad that boots clean.</div>
         <div style={{ display: 'flex', marginTop: 24, maxWidth: 880, fontSize: 32, lineHeight: 1.5, color: '#45414f' }}>
-          Theorem-backed coins. Formally verified. Fully on-chain.
+          {VERIFICATION_LIVE ? 'Theorem-backed coins. Formally verified. Fully on-chain.' : 'Theorem-backed coins. Fully on-chain.'}
         </div>
         <Footer />
       </XpFrame>

@@ -14,6 +14,7 @@ import { displayTicker } from '@/lib/hoodToken';
 import { FormalProofTab } from '@/components/verification/FormalProofTab';
 import { VerificationBadge } from '@/components/verification/VerificationBadge';
 import { Button } from '@/components/xp/Button';
+import { VERIFICATION_LIVE } from '@/lib/features';
 import { openVerification } from '@/lib/openApp';
 import { useWindows, type WindowState } from '@/store/windows';
 import { PHASE_LABEL, formatPercent, formatQuote, timeAgo } from '../explore/format';
@@ -197,10 +198,12 @@ function TheoremTab({ token: t }: { token: Token }) {
           <p className={styles.muted}>
             Rigor <RigorBadge score={t.rigorScore} /> — {RIGOR_DISCLAIMER}.
           </p>
-          <p>
-            <Button onClick={() => openVerification(t.token)}>⚡ Submit for Formal Verification</Button>{' '}
-            <span className={styles.muted}>A Lean proof that passes earns Σ 100, FORMAL ✓ and a reward.</span>
-          </p>
+          {VERIFICATION_LIVE && (
+            <p>
+              <Button onClick={() => openVerification(t.token)}>⚡ Submit for Formal Verification</Button>{' '}
+              <span className={styles.muted}>A Lean proof that passes earns Σ 100, FORMAL ✓ and a reward.</span>
+            </p>
+          )}
         </>
       )}
       <p>

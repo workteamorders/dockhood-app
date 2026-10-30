@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { VERIFICATION_LIVE } from '@/lib/features';
 import {
   CalloutsIcon,
   ExploreIcon,
@@ -205,12 +206,12 @@ export const APPS: Record<AppId, AppMeta> = {
 };
 
 /** Desktop icon order (docs/BRIEF.md §4.1). */
-export const DESKTOP_APPS: AppId[] = ['launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification', 'games'];
+export const DESKTOP_APPS: AppId[] = (['launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification', 'games'] as AppId[]).filter((id) => id !== 'verification' || VERIFICATION_LIVE);
 
 /** The Games folder and the Start menu's Games submenu (hood-exe-games-brief.md §1.3–1.4). */
 export const GAME_APPS: AppId[] = ['solitaire', 'minesweeper'];
 
 /** Start menu list order. */
-export const START_APPS: AppId[] = ['launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification'];
+export const START_APPS: AppId[] = (['launch', 'explore', 'callouts', 'portfolio', 'theorem', 'verification'] as AppId[]).filter((id) => id !== 'verification' || VERIFICATION_LIVE);
 
 export const isAppId = (v: string | null | undefined): v is AppId => !!v && v in APPS;
