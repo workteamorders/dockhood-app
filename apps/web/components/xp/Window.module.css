@@ -1,5 +1,7 @@
-.window { position: absolute; display: flex; flex-direction: column; background: var(--glass-light); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: var(--glass-shadow); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); min-width: 200px; min-height: 80px; overflow: hidden; animation: open .22s ease-out; }
-/* Opacity only: scaling a backdrop-filter surface makes the blurred wallpaper behind it flicker while it opens. */
+.window { position: absolute; display: flex; flex-direction: column; background: var(--glass-light); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: var(--glass-shadow); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); min-width: 200px; min-height: 80px; overflow: hidden; }
+/* Fade the contents, never the window itself: animating opacity or scale on a backdrop-filter surface makes the
+   blurred wallpaper behind it flicker while it opens, and once more when the animation layer is dropped. */
+.window > * { animation: open .22s ease-out; }
 @keyframes open { from { opacity: 0; } to { opacity: 1; } }
 .inactive { box-shadow: 0 8px 35px rgba(0,0,0,.13); }
 .maximized { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; border-radius: 0; }

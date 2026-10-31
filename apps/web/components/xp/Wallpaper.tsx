@@ -160,24 +160,26 @@ export function Wallpaper({ interactive = false }: { interactive?: boolean }) {
         </defs>
         <path fill={paint('sky')} d="M0 0h2560v1440H0z" />
         <path fill={paint('sunlight')} d="M0 0h2560v1440H0z" />
-        <g className={styles.far}>
+        </svg>
+        <svg className={`${styles.artwork} ${styles.far}`} viewBox="0 0 2560 1440" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
           <path d="M-200 1000C150 900 500 210 1200 260S2070 690 2750 130L2800 1600H-200Z" fill={paint('apricot')} />
           <path d="M-200 1000C150 900 500 210 1200 260S2070 690 2750 130" fill="none" stroke={paint('rim')} strokeWidth="3" />
           <path d="M100 1000C610 470 760 310 1240 325S2110 760 2700 280" fill="none" stroke="#ffe2b5" strokeOpacity=".09" strokeWidth="38" />
-        </g>
-        <g className={styles.middle}>
+        </svg>
+        <svg className={`${styles.artwork} ${styles.middle}`} viewBox="0 0 2560 1440" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
           <path d="M-200 1050C470 1110 700 280 1260 340S2080 980 2760 580L2800 1600H-200Z" fill={paint('rose')} />
           <path d="M-200 1050C470 1110 700 280 1260 340S2080 980 2760 580" fill="none" stroke={paint('rim')} strokeWidth="2.5" />
           <path d="M480 960C790 640 913 398 1260 402S2040 1000 2670 710" fill="none" stroke="#ffc0a4" strokeOpacity=".08" strokeWidth="25" />
-        </g>
-        <g className={styles.near}>
+        </svg>
+        <svg className={`${styles.artwork} ${styles.near}`} viewBox="0 0 2560 1440" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
           <path d="M-200 1360C470 1150 780 650 1250 670S2040 1230 2760 840V1600H-200Z" fill={paint('mulberry')} />
           <path d="M-200 1360C470 1150 780 650 1250 670S2040 1230 2760 840" fill="none" stroke={paint('rim')} strokeOpacity=".65" strokeWidth="2" />
           <path d="M-200 1490C450 1100 1050 1040 1550 1190S2200 1520 2760 1100V1600H-200Z" fill={paint('violet')} />
           <path d="M-200 1490C450 1100 1050 1040 1550 1190S2200 1520 2760 1100" fill="none" stroke="#e3bdd0" strokeOpacity=".25" strokeWidth="2" />
-        </g>
-        <path fill={paint('shade')} d="M0 0h2560v1440H0z" />
-      </svg>
+        </svg>
+        <svg className={styles.artwork} viewBox="0 0 2560 1440" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+          <path fill={paint('shade')} d="M0 0h2560v1440H0z" />
+        </svg>
       <div className={styles.glow} />
     </div>
   );

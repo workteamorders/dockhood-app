@@ -30,7 +30,8 @@
 .running { position: absolute; width: 4px; height: 4px; background: #39303e; border-radius: 50%; bottom: -6px; left: calc(50% - 2px); }
 .unread { position: absolute; width: 10px; height: 10px; background: #ff5f57; border: 2px solid #fff; border-radius: 50%; top: 0; right: 0; }
 .dockSeparator { height: 44px; width: 1px; flex: 0 0 1px; background: #ffffff50; box-shadow: 1px 0 #0000000a; margin: 0 2px; }
-.launchpad { position: absolute; inset: var(--menubar-h) 0 var(--taskbar-h); z-index: 8000; background: rgba(63,39,78,.55); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 20px; text-align: center; animation: appear .2s ease; }
+.launchpad { position: absolute; inset: var(--menubar-h) 0 var(--taskbar-h); z-index: 8000; background: rgba(63,39,78,.55); -webkit-backdrop-filter: blur(32px) saturate(180%); backdrop-filter: blur(32px) saturate(180%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 20px; text-align: center; }
+.launchpad > * { animation: appear .2s ease; }
 @keyframes appear { from { opacity: 0; } }
 .launchpadClose { position: absolute; top: 24px; right: 28px; border: 1px solid #ffffff40; border-radius: 20px; padding: 6px 16px; color: white; background: #ffffff15; font-size: 12px; }
 .eyebrow { font-size: 10px; letter-spacing: .2em; font-weight: 600; opacity: .7; }
